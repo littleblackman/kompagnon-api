@@ -5,12 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="301b669b-7364-4077-9f10-38804398c286" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/State/UserMeStateProvider.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/jwt/private.pem" beforeDir="false" afterPath="$PROJECT_DIR$/config/jwt/private.pem" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/jwt/public.pem" beforeDir="false" afterPath="$PROJECT_DIR$/config/jwt/public.pem" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/DataFixtures/UserFixtures.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/DataFixtures/UserFixtures.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/User.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/User.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -232,7 +228,9 @@
       <workItem from="1740130192894" duration="668000" />
       <workItem from="1740134421422" duration="737000" />
       <workItem from="1741085277886" duration="955000" />
-      <workItem from="1741096397920" duration="2336000" />
+      <workItem from="1741096397920" duration="2438000" />
+      <workItem from="1741118999977" duration="45000" />
+      <workItem from="1741128392506" duration="154000" />
     </task>
     <servers />
   </component>
