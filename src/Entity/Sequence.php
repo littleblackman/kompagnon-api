@@ -4,6 +4,8 @@ namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
 use App\Entity\Traits\Timestampable;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
@@ -38,14 +40,18 @@ class Sequence
     #[ORM\Column(type: 'string', length: 255)]
     private ?string $aesthetic_idea = null;
 
+    #[ORM\OneToMany(targetEntity: Scene::class, mappedBy: 'sequence', cascade: ['persist', 'remove'])]
+    private Collection $scenes;
+
+
+    public function __construct()
+    {
+        $this->scenes = new ArrayCollection();
+    }
+
     public function getId(): ?int
     {
         return $this->id;
-    }
-
-    public function setId(?int $id): void
-    {
-        $this->id = $id;
     }
 
     public function getName(): string
@@ -116,6 +122,29 @@ class Sequence
     public function setAestheticIdea(?string $aesthetic_idea): void
     {
         $this->aesthetic_idea = $aesthetic_idea;
+    }
+
+    public function getScenes(): Collection
+    {
+        return $this->scenes;
+    }
+
+    public function addScene(Scene $scene): void
+    {
+        if (!$this->scenes->contains($scene)) {
+            $this->scenes[] = $scene;
+            $scene->setSequence($this);
+        }
+    }
+
+    public function removeScene(Scene $scene): self
+    {
+        if ($this->scenes->removeElement($scene)) {
+            if ($scene->getSequence() === $this) {
+                $scene->setSequence(null);
+            }
+        }
+        return $this;
     }
 
 }
