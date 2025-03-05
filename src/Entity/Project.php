@@ -25,6 +25,11 @@ class Project
     #[Groups(['project:read', 'project:write'])]
     #[ORM\Column(type: 'string', length: 255)]
     private string $name;
+
+    #[Groups(['project:read', 'project:write'])]
+    #[ORM\Column(type: 'string', length: 255, unique: true)]
+    private string $slug;
+
     #[Groups(['project:read', 'project:write'])]
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $description = null;
@@ -54,6 +59,16 @@ class Project
     public function setName(string $name): void
     {
         $this->name = $name;
+    }
+
+    public function getSlug(): string
+    {
+        return $this->slug;
+    }
+
+    public function setSlug(string $slug): void
+    {
+        $this->slug = $slug;
     }
 
     public function getDescription(): ?string
