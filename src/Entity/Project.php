@@ -8,24 +8,31 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 
+
+#[ApiResource(
+    normalizationContext: ['groups' => ['project:read']],
+    denormalizationContext: ['groups' => ['project:write']]
+)]
 #[ORM\Entity]
-#[ApiResource]
 class Project
 {
     use Timestampable;
 
+    #[Groups(['project:read'])]
     #[ORM\Id, ORM\GeneratedValue, ORM\Column(type: 'integer')]
     private ?int $id = null;
 
+    #[Groups(['project:read', 'project:write'])]
     #[ORM\Column(type: 'string', length: 255)]
     private string $name;
-
+    #[Groups(['project:read', 'project:write'])]
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $description = null;
-
+    #[Groups(['project:read', 'project:write'])]
     #[ORM\ManyToOne(targetEntity: Type::class)]
     private Type $type;
 
+    #[Groups(['project:read', 'project:write'])]
     #[ORM\ManyToOne(targetEntity: User::class)]
     private User $user;
 

@@ -7,16 +7,22 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity]
-#[ApiResource]
+#[ApiResource(
+    normalizationContext: ['groups' => ['project:read']],
+    denormalizationContext: ['groups' => ['project:write']]
+)]
 class Type
 {
     #[ORM\Id, ORM\GeneratedValue, ORM\Column(type: 'integer')]
+    #[Groups(['project:read'])]
     private ?int $id = null;
 
     #[ORM\Column(type: 'string', length: 255)]
+    #[Groups(['project:read', 'project:write'])]
     private string $name;
 
     #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(['project:read', 'project:write'])]
     private ?string $description = null;
 
     public function getId(): ?int
