@@ -43,10 +43,17 @@ class Sequence
     #[ORM\OneToMany(targetEntity: Scene::class, mappedBy: 'sequence', cascade: ['persist', 'remove'])]
     private Collection $scenes;
 
+    #[ORM\OneToMany(targetEntity: SequenceCriteria::class, mappedBy: 'sequence', cascade: ['persist', 'remove'])]
+    private Collection $sequenceCriterias;
+
+    #[ORM\OneToMany(targetEntity: SequenceCharacter::class, mappedBy: 'sequence', cascade: ['persist', 'remove'])]
+    private Collection $sequenceCharacters;
 
     public function __construct()
     {
         $this->scenes = new ArrayCollection();
+        $this->sequenceCriterias = new ArrayCollection();
+        $this->sequenceCharacters = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -146,5 +153,54 @@ class Sequence
         }
         return $this;
     }
+
+    public function getSequenceCriterias(): Collection
+    {
+        return $this->sequenceCriterias;
+    }
+
+    public function addSequenceCriteria(SequenceCriteria $sequenceCriteria): self
+    {
+        if (!$this->sequenceCriterias->contains($sequenceCriteria)) {
+            $this->sequenceCriterias->add($sequenceCriteria);
+            $sequenceCriteria->setSequence($this);
+        }
+        return $this;
+    }
+
+    public function removeSequenceCriteria(SequenceCriteria $sequenceCriteria): self
+    {
+        if ($this->sequenceCriterias->removeElement($sequenceCriteria)) {
+            if ($sequenceCriteria->getSequence() === $this) {
+                $sequenceCriteria->setSequence(null);
+            }
+        }
+        return $this;
+    }
+
+    public function getSequenceCharacters(): Collection
+    {
+        return $this->sequenceCharacters;
+    }
+
+    public function addSequenceCharacter(SequenceCharacter $sequenceCharacter): self
+    {
+        if (!$this->sequenceCharacters->contains($sequenceCharacter)) {
+            $this->sequenceCharacters->add($sequenceCharacter);
+            $sequenceCharacter->setSequence($this);
+        }
+        return $this;
+    }
+
+    public function removeSequenceCharacter(SequenceCharacter $sequenceCharacter): self
+    {
+        if ($this->sequenceCharacters->removeElement($sequenceCharacter)) {
+            if ($sequenceCharacter->getSequence() === $this) {
+                $sequenceCharacter->setSequence(null);
+            }
+        }
+        return $this;
+    }
+
 
 }
