@@ -34,10 +34,6 @@ class ProjectService
             return null;
         }
 
-        dd($project);
-
-        // retrieve the parts of the project
-
-
+        return $project;
     }
 }
