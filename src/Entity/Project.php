@@ -6,6 +6,8 @@ use ApiPlatform\Metadata\ApiResource;
 use App\Entity\Traits\Timestampable;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\ArrayCollection;
 
 
 
@@ -37,18 +39,22 @@ class Project
     #[ORM\ManyToOne(targetEntity: Type::class)]
     private Type $type;
 
+    #[ORM\OneToMany(targetEntity: Part::class, mappedBy: 'project', cascade: ['persist', 'remove'])]
+    private Collection $parts;
+
     #[Groups(['project:read', 'project:write'])]
     #[ORM\ManyToOne(targetEntity: User::class)]
     private User $user;
 
+    public function __construct()
+    {
+        $this->parts = new ArrayCollection();
+    }
+
+
     public function getId(): ?int
     {
         return $this->id;
-    }
-
-    public function setId(?int $id): void
-    {
-        $this->id = $id;
     }
 
     public function getName(): string
@@ -99,5 +105,30 @@ class Project
     public function setUser(User $user): void
     {
         $this->user = $user;
+    }
+
+    public function getParts(): Collection
+    {
+        return $this->parts;
+    }
+
+    public function addPart(Part $part): self
+    {
+        if (!$this->parts->contains($part)) {
+            $this->parts->add($part);
+            $part->setProject($this);
+        }
+
+        return $this;
+    }
+
+    public function removePart(Part $part): self
+    {
+        if ($this->parts->removeElement($part)) {
+            if ($part->getProject() === $this) {
+                $part->setProject(null);
+            }
+        }
+        return $this;
     }
 }

@@ -39,11 +39,6 @@ class Scene
         return $this->id;
     }
 
-    public function setId(?int $id): void
-    {
-        $this->id = $id;
-    }
-
     public function getName(): string
     {
         return $this->name;
@@ -79,7 +74,7 @@ class Scene
         return $this->sequence;
     }
 
-    public function setSequence(Sequence $sequence): void
+    public function setSequence(?Sequence $sequence): void
     {
         $this->sequence = $sequence;
     }

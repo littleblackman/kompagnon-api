@@ -4,6 +4,8 @@ namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
 use App\Entity\Traits\Timestampable;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
@@ -32,6 +34,14 @@ class Part
 
     #[ORM\ManyToOne(targetEntity: Status::class)]
     private Status $status;
+
+    #[ORM\OneToMany(targetEntity: Sequence::class, mappedBy: 'part', cascade: ['persist', 'remove'])]
+    private Collection $sequences;
+
+    public function __construct()
+    {
+        $this->sequences = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -91,6 +101,29 @@ class Part
     public function setStatus(Status $status): void
     {
         $this->status = $status;
+    }
+
+    public function getSequences(): Collection
+    {
+        return $this->sequences;
+    }
+
+    public function addSequence(Sequence $sequence): void
+    {
+        if (!$this->sequences->contains($sequence)) {
+            $this->sequences[] = $sequence;
+            $sequence->setPart($this);
+        }
+    }
+
+    public function removeSequence(Sequence $sequence): self
+    {
+        if ($this->sequences->removeElement($sequence)) {
+            if ($sequence->getPart() === $this) {
+                $sequence->setPart(null);
+            }
+        }
+        return $this;
     }
 
 }
