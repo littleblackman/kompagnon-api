@@ -8,7 +8,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 
 #[ORM\Entity]
-class Character
+class Personnage
 {
 
     use Timestampable;
@@ -21,7 +21,7 @@ class Character
     #[ORM\Column(type: 'string', length: 255)]
     private string $firstName;
 
-    #[ORM\Column(type: 'string', length: 255)]
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
     private string $lastName;
 
     #[ORM\Column(type: 'text', nullable: true)]
@@ -33,7 +33,7 @@ class Character
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     private ?string $origin = null;
 
-    #[ORM\ManyToOne(targetEntity: Project::class, inversedBy: 'characters')]
+    #[ORM\ManyToOne(targetEntity: Project::class, inversedBy: 'personnages')]
     #[ORM\JoinColumn(nullable: false)]
     private Project $project;
 
@@ -55,12 +55,12 @@ class Character
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     private ?string $weakness = null;
 
-    #[ORM\OneToMany(targetEntity: SequenceCharacter::class, mappedBy: 'character', cascade: ['persist', 'remove'])]
-    private Collection $sequenceCharacters;
+    #[ORM\OneToMany(targetEntity: SequencePersonnage::class, mappedBy: 'personnage', cascade: ['persist', 'remove'])]
+    private Collection $sequencePersonnages;
 
     public function __construct()
     {
-        $this->sequenceCharacters = new ArrayCollection();
+        $this->sequencePersonnages = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -112,25 +112,25 @@ class Character
         return $this;
     }
 
-    public function getSequenceCharacters(): Collection
+    public function getSequencePersonnages(): Collection
     {
-        return $this->sequenceCharacters;
+        return $this->sequencePersonnages;
     }
 
-    public function addSequenceCharacter(SequenceCharacter $sequenceCharacter): self
+    public function addSequencePersonnage(SequencePersonnage $sequencePersonnage): self
     {
-        if (!$this->sequenceCharacters->contains($sequenceCharacter)) {
-            $this->sequenceCharacters->add($sequenceCharacter);
-            $sequenceCharacter->setCharacter($this);
+        if (!$this->sequencePersonnages->contains($sequencePersonnage)) {
+            $this->sequencePersonnages->add($sequencePersonnage);
+            $sequencePersonnage->setPersonnage($this);
         }
         return $this;
     }
 
-    public function removeSequenceCharacter(SequenceCharacter $sequenceCharacter): self
+    public function removeSequencePersonnage(SequencePersonnage $sequencePersonnage): self
     {
-        if ($this->sequenceCharacters->removeElement($sequenceCharacter)) {
-            if ($sequenceCharacter->getCharacter() === $this) {
-                $sequenceCharacter->setCharacter(null);
+        if ($this->sequencePersonnages->removeElement($sequencePersonnage)) {
+            if ($sequencePersonnage->getPersonnage() === $this) {
+                $sequencePersonnage->setPersonnage(null);
             }
         }
         return $this;

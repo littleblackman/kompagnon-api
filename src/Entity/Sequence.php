@@ -46,14 +46,14 @@ class Sequence
     #[ORM\OneToMany(targetEntity: SequenceCriteria::class, mappedBy: 'sequence', cascade: ['persist', 'remove'])]
     private Collection $sequenceCriterias;
 
-    #[ORM\OneToMany(targetEntity: SequenceCharacter::class, mappedBy: 'sequence', cascade: ['persist', 'remove'])]
-    private Collection $sequenceCharacters;
+    #[ORM\OneToMany(targetEntity: SequencePersonnage::class, mappedBy: 'sequence', cascade: ['persist', 'remove'])]
+    private Collection $sequencePersonnages;
 
     public function __construct()
     {
         $this->scenes = new ArrayCollection();
         $this->sequenceCriterias = new ArrayCollection();
-        $this->sequenceCharacters = new ArrayCollection();
+        $this->sequencePersonnages = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -178,25 +178,25 @@ class Sequence
         return $this;
     }
 
-    public function getSequenceCharacters(): Collection
+    public function getSequencePersonnages(): Collection
     {
-        return $this->sequenceCharacters;
+        return $this->sequencePersonnages;
     }
 
-    public function addSequenceCharacter(SequenceCharacter $sequenceCharacter): self
+    public function addSequencePersonnage(SequencePersonnage $sequencePersonnage): self
     {
-        if (!$this->sequenceCharacters->contains($sequenceCharacter)) {
-            $this->sequenceCharacters->add($sequenceCharacter);
-            $sequenceCharacter->setSequence($this);
+        if (!$this->sequencePersonnages->contains($sequencePersonnage)) {
+            $this->sequencePersonnages->add($sequencePersonnage);
+            $sequencePersonnage->setSequence($this);
         }
         return $this;
     }
 
-    public function removeSequenceCharacter(SequenceCharacter $sequenceCharacter): self
+    public function removeSequencePersonnage(SequencePersonnage $sequencePersonnage): self
     {
-        if ($this->sequenceCharacters->removeElement($sequenceCharacter)) {
-            if ($sequenceCharacter->getSequence() === $this) {
-                $sequenceCharacter->setSequence(null);
+        if ($this->sequencePersonnages->removeElement($sequencePersonnage)) {
+            if ($sequencePersonnage->getSequence() === $this) {
+                $sequencePersonnage->setSequence(null);
             }
         }
         return $this;

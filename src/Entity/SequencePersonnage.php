@@ -5,20 +5,20 @@ namespace App\Entity;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
-class SequenceCharacter
+class SequencePersonnage
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(targetEntity: Sequence::class, inversedBy: 'sequenceCharacters')]
+    #[ORM\ManyToOne(targetEntity: Sequence::class, inversedBy: 'sequencePersonnages')]
     #[ORM\JoinColumn(nullable: false)]
     private Sequence $sequence;
 
-    #[ORM\ManyToOne(targetEntity: Character::class, inversedBy: 'sequenceCharacters')]
+    #[ORM\ManyToOne(targetEntity: Personnage::class, inversedBy: 'sequencePersonnages')]
     #[ORM\JoinColumn(nullable: false)]
-    private Character $character;
+    private Personnage $personnage;
 
 
     public function getId(): ?int
@@ -37,14 +37,14 @@ class SequenceCharacter
         return $this;
     }
 
-    public function getCharacter(): Character
+    public function getPersonage(): Personnage
     {
-        return $this->character;
+        return $this->personnage;
     }
 
-    public function setCharacter(Character $character): self
+    public function setPersonnage(Personnage $personnage): self
     {
-        $this->character = $character;
+        $this->personnage = $personnage;
         return $this;
     }
 }
