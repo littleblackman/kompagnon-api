@@ -18,6 +18,7 @@ class SequencePersonnage
 
     #[ORM\ManyToOne(targetEntity: Personnage::class, inversedBy: 'sequencePersonnages')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(["metadata_read"])]
     private Personnage $personnage;
 
 
