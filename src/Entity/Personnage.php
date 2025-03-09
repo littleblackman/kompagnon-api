@@ -6,6 +6,7 @@ use App\Entity\Traits\Timestampable;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity]
 class Personnage
@@ -16,21 +17,27 @@ class Personnage
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
+    #[Groups(["metadata_read"])]
     private ?int $id = null;
 
     #[ORM\Column(type: 'string', length: 255)]
+    #[Groups(["metadata_read"])]
     private string $firstName;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[Groups(["metadata_read"])]
     private string $lastName;
 
     #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(["metadata_read"])]
     private ?string $background = null;
 
     #[ORM\Column(type: 'integer', nullable: true)]
+    #[Groups(["metadata_read"])]
     private ?int $age = null;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[Groups(["metadata_read"])]
     private ?string $origin = null;
 
     #[ORM\ManyToOne(targetEntity: Project::class, inversedBy: 'personnages')]
@@ -38,21 +45,27 @@ class Personnage
     private Project $project;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[Groups(["metadata_read"])]
     private ?string $avatar = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(["metadata_read"])]
     private ?string $images = null;
 
     #[ORM\Column(type: 'integer', nullable: true)]
+    #[Groups(["metadata_read"])]
     private ?int $level = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(["metadata_read"])]
     private ?string $analysis = null;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[Groups(["metadata_read"])]
     private ?string $strength = null;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[Groups(["metadata_read"])]
     private ?string $weakness = null;
 
     #[ORM\OneToMany(targetEntity: SequencePersonnage::class, mappedBy: 'personnage', cascade: ['persist', 'remove'])]

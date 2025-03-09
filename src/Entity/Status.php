@@ -12,12 +12,15 @@ class Status
 {
 
     #[ORM\Id, ORM\GeneratedValue, ORM\Column(type: 'integer')]
+    #[Groups(["metadata_read"])]
     private ?int $id = null;
 
     #[ORM\Column(type: 'string', length: 255)]
+    #[Groups(["metadata_read"])]
     private string $name;
 
     #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(["metadata_read"])]
     private ?string $description = null;
 
     public function getId(): ?int
