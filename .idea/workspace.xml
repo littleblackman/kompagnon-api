@@ -5,15 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="301b669b-7364-4077-9f10-38804398c286" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/Controller/MetadataController.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/Repository/CriteriaRepository.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/Repository/PersonnageRepository.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/Repository/StatusRepository.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/php.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/php.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Criteria.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Criteria.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Personnage.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Personnage.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/SequencePersonnage.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/SequencePersonnage.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Status.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Status.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/composer.json" beforeDir="false" afterPath="$PROJECT_DIR$/composer.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/composer.lock" beforeDir="false" afterPath="$PROJECT_DIR$/composer.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/packages/cache.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/config/packages/cache.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Controller/MetadataController.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Controller/MetadataController.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -184,6 +181,7 @@
       <path value="$PROJECT_DIR$/vendor/lcobucci/clock" />
       <path value="$PROJECT_DIR$/vendor/doctrine/doctrine-fixtures-bundle" />
       <path value="$PROJECT_DIR$/vendor/doctrine/data-fixtures" />
+      <path value="$PROJECT_DIR$/vendor/predis/predis" />
     </include_path>
   </component>
   <component name="ProjectColorInfo">{
@@ -254,6 +252,7 @@
       <workItem from="1741343910293" duration="4355000" />
       <workItem from="1741439883765" duration="1757000" />
       <workItem from="1741443681325" duration="714000" />
+      <workItem from="1741691812712" duration="1561000" />
     </task>
     <servers />
   </component>
