@@ -5,11 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="301b669b-7364-4077-9f10-38804398c286" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/php.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/php.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/composer.json" beforeDir="false" afterPath="$PROJECT_DIR$/composer.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/composer.lock" beforeDir="false" afterPath="$PROJECT_DIR$/composer.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/packages/cache.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/config/packages/cache.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Controller/MetadataController.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Controller/MetadataController.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -252,7 +248,7 @@
       <workItem from="1741343910293" duration="4355000" />
       <workItem from="1741439883765" duration="1757000" />
       <workItem from="1741443681325" duration="714000" />
-      <workItem from="1741691812712" duration="1561000" />
+      <workItem from="1741691812712" duration="2168000" />
     </task>
     <servers />
   </component>

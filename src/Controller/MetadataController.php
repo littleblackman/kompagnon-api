@@ -9,8 +9,8 @@ use App\Repository\StatusRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use App\Service\ProjectService;
 use Symfony\Contracts\Cache\CacheInterface;
+
 class MetadataController extends AbstractController
 {
 
