@@ -26,7 +26,7 @@ class Sequence
     private ?string $description = null;
 
     #[ORM\Column(type: 'integer')]
-    private int $order;
+    private int $position;
 
     #[ORM\ManyToOne(targetEntity: Part::class)]
     private Part $part;
@@ -81,14 +81,14 @@ class Sequence
         $this->description = $description;
     }
 
-    public function getOrder(): int
+    public function getPosition(): int
     {
-        return $this->order;
+        return $this->position;
     }
 
-    public function setOrder(int $order): void
+    public function setPosition(int $position): void
     {
-        $this->order = $order;
+        $this->position = $position;
     }
 
     public function getPart(): Part

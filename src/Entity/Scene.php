@@ -20,7 +20,7 @@ class Scene
     private string $name;
 
     #[ORM\Column(type: 'integer')]
-    private int $order;
+    private int $position;
 
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $description = null;
@@ -87,6 +87,17 @@ class Scene
     public function setStatus(Status $status): void
     {
         $this->status = $status;
+    }
+
+    public function getPosition(): int
+    {
+        return $this->position;
+    }
+
+    public function setPosition(int $position): self
+    {
+        $this->position = $position;
+        return $this;
     }
 
 

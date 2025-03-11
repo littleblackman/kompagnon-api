@@ -40,7 +40,7 @@ class ProjectRepository extends ServiceEntityRepository
             LEFT JOIN sequences.sequencePersonnages sequencePersonnages
             LEFT JOIN sequencePersonnages.personnage personnage
             WHERE p.slug = :slug
-            ORDER BY parts.order ASC, sequences.order ASC, scenes.order ASC
+            ORDER BY parts.position ASC, sequences.position ASC, scenes.position ASC
         ")->setParameter('slug', $slug);
 
         return $query->getOneOrNullResult(AbstractQuery::HYDRATE_ARRAY);
