@@ -27,7 +27,7 @@ class Part
     private ?string $description = null;
 
     #[ORM\Column(type: 'integer')]
-    private int $order;
+    private int $position;
 
     #[ORM\ManyToOne(targetEntity: Project::class)]
     private Project $project;
@@ -58,9 +58,10 @@ class Part
         return $this->name;
     }
 
-    public function setName(string $name): void
+    public function setName(string $name): self
     {
         $this->name = $name;
+        return $this;
     }
 
     public function getDescription(): ?string
@@ -68,19 +69,21 @@ class Part
         return $this->description;
     }
 
-    public function setDescription(?string $description): void
+    public function setDescription(?string $description): self
     {
         $this->description = $description;
+        return $this;
     }
 
-    public function getOrder(): int
+    public function getPosition(): int
     {
-        return $this->order;
+        return $this->position;
     }
 
-    public function setOrder(int $order): void
+    public function setPosition(int $position): self
     {
-        $this->order = $order;
+        $this->position = $position;
+        return $this;
     }
 
     public function getProject(): Project
@@ -88,9 +91,10 @@ class Part
         return $this->project;
     }
 
-    public function setProject(Project $project): void
+    public function setProject(Project $project): self
     {
         $this->project = $project;
+        return $this;
     }
 
     public function getStatus(): Status
@@ -98,9 +102,10 @@ class Part
         return $this->status;
     }
 
-    public function setStatus(Status $status): void
+    public function setStatus(Status $status): self
     {
         $this->status = $status;
+        return $this;
     }
 
     public function getSequences(): Collection
@@ -108,12 +113,13 @@ class Part
         return $this->sequences;
     }
 
-    public function addSequence(Sequence $sequence): void
+    public function addSequence(Sequence $sequence): self
     {
         if (!$this->sequences->contains($sequence)) {
             $this->sequences[] = $sequence;
             $sequence->setPart($this);
         }
+        return $this;
     }
 
     public function removeSequence(Sequence $sequence): self
