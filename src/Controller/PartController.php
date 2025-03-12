@@ -10,7 +10,7 @@ use App\Repository\PartRepository;
 
 class PartController extends AbstractController
 {
-    #[Route('/api/part/update', name: 'api_part_update', methods: ['PUT'])]
+    #[Route('/api/part/update', name: 'api_part_update', methods: ['PUT', 'POST'])]
     public function updatePart(Request $request,  PartRepository $partRepository): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
@@ -18,6 +18,6 @@ class PartController extends AbstractController
             return $this->json(['error' => 'Le nom est obligatoire'], 400);
         }
         $part = $partRepository->createOrUpdate($data);
-        return $this->json($part, 200, [], ['groups' => 'part:read']);
+        return $this->json($part, 200, []);
     }
 }
