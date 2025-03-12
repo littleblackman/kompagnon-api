@@ -20,4 +20,17 @@ class PartController extends AbstractController
         $part = $partRepository->createOrUpdate($data);
         return $this->json($part, 200, []);
     }
+
+    #[Route('/api/part/delete/{id}', name: 'api_part_delete', methods: ['DELETE'])]
+    public function deletePart(Request $request, PartRepository $partRepository): JsonResponse
+    {
+        $part = $partRepository->find($request->get('id'));
+        if (!$part) {
+            return $this->json(['error' => 'La partie n\'existe pas'], 404);
+        }
+        $em = $partRepository->getEntityManager();
+        $em->remove($part);
+        $em->flush();
+        return $this->json(['message' => 'La partie a été supprimée'], 200);
+    }
 }
