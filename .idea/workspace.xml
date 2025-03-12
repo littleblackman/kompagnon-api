@@ -5,16 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="301b669b-7364-4077-9f10-38804398c286" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/Controller/PartController.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/Repository/PartRepository.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/api.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/api.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/composer.lock" beforeDir="false" afterPath="$PROJECT_DIR$/composer.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Part.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Part.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Scene.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Scene.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Entity/Sequence.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Sequence.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Repository/ProjectRepository.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Repository/ProjectRepository.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Repository/UserRepository.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Repository/UserRepository.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Controller/PartController.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Controller/PartController.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Repository/PartRepository.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Repository/PartRepository.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -260,6 +253,12 @@
       <workItem from="1741695458829" duration="767000" />
       <workItem from="1741707040776" duration="1889000" />
       <workItem from="1741713809567" duration="1521000" />
+      <workItem from="1741718806367" duration="126000" />
+      <workItem from="1741720390157" duration="147000" />
+      <workItem from="1741721946470" duration="149000" />
+      <workItem from="1741722193561" duration="439000" />
+      <workItem from="1741722931292" duration="231000" />
+      <workItem from="1741723644707" duration="1317000" />
     </task>
     <servers />
   </component>

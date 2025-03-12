@@ -9,25 +9,41 @@ use Doctrine\Persistence\ManagerRegistry;
 class PartRepository extends ServiceEntityRepository
 {
 
-    public function __construct(ManagerRegistry $registry)
+    private ManagerRegistry $managerRegistry;
+    private ProjectRepository $projectRepository;
+    private StatusRepository $statusRepository;
+
+    public function __construct(ManagerRegistry $registry, ProjectRepository $projectRepository, StatusRepository $statusRepository)
     {
         parent::__construct($registry, Part::class);
+        $this->projectRepository = $projectRepository;
+        $this->statusRepository = $statusRepository;
     }
 
     public function createOrUpdate(array $data): Part
     {
         $em = $this->getEntityManager();
 
-        if(!$part = $this->find($data['id'])) $part = new Part();
+        if(!isset($data['id'])) $data['id'] = 0;
+
+        if(!$part = $this->find($data['id'])) {
+            unset($data['id']);
+            $part = new Part();
+            $project = $this->projectRepository->find($data['project_id']);
+            $status = $this->statusRepository->find(6);
+        }
 
         $part->setName($data['name'])
             ->setDescription($data['description'] ?? '')
             ->setPosition($data['order'] ?? 0)
             ->setUpdatedAt(new \DateTimeImmutable());
         if (!$part->getId()) {
-            $part->setCreatedAt(new \DateTimeImmutable());
-            $em->persist($part);
+            $part->setProject($project)
+                ->setStatus($status)
+                ->setCreatedAt(new \DateTimeImmutable());
         }
+
+        $em->persist($part);
 
         $em->flush();
 
