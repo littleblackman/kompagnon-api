@@ -23,7 +23,7 @@ class PartService
         $this->partRepository = $partRepository;
     }
 
-    public function createOrUpdate(array $data): array
+    public function createOrUpdate(array $data): ?array
     {
         // retrieve the project by slug
         $part = $this->partRepository->createOrUpdate( $data);
@@ -32,12 +32,12 @@ class PartService
         }
 
         // reorder the position
-        if (!empty($data['afterPartId'])) {
-            // return the part updated and array of positions
-            $result = $this->reOrderPart($part, $data['afterPartId']);
-            $part = $result['part'];
-            $positions = array_flip($result['positions']);
-        }
+        (isset($data['afterPartId'])) ? $afterPartId = $data['afterPartId'] : $afterPartId= null;
+        // return the part updated and array of positions
+        $result = $this->reOrderPart($part, $afterPartId);
+        $part = $result['part'];
+        $positions = $result['positions'];
+
 
         return [
             'part' => $part,
@@ -45,7 +45,7 @@ class PartService
         ];
     }
 
-    public function reOrderPart(Part $currentPart, int $afterPartId): array
+    public function reOrderPart(Part $currentPart, int $afterPartId = null): ?array
     {
         // retrieve all parts of the project
         $project = $this->projectRepository->find($currentPart->getProject());
@@ -55,15 +55,17 @@ class PartService
 
         // reorder position
         $datas = [];
-        foreach($project->getParts() as $part) {
 
+        // if afterPartId is null, we add the current part at the beginning
+        if ($afterPartId === null) $datas[] = $currentPart->getId();
+
+        foreach($project->getParts() as $part) {
+            // skip the current part in every iteration
             if($part->getId() === $currentPart->getId()) continue;
-            if($part->getId() === $afterPartId) {
-                $datas[] = $part->getId();
-                $datas[] = $currentPart->getId();
-            } else {
-                $datas[] = $part->getId();
-            }
+            // in all other cases, we add the part to the list
+            $datas[] = $part->getId();
+            // if we find the afterPartId, we add the current part after it
+            if($part->getId() === $afterPartId) $datas[] = $currentPart->getId();
         }
 
         // persist the new order
