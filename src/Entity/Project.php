@@ -40,6 +40,7 @@ class Project
     private Type $type;
 
     #[ORM\OneToMany(targetEntity: Part::class, mappedBy: 'project', cascade: ['persist', 'remove'])]
+    #[ORM\OrderBy(['position' => 'ASC'])]
     private Collection $parts;
 
     #[Groups(['project:read', 'project:write'])]

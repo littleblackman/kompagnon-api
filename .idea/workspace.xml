@@ -7,6 +7,10 @@
     <list default="true" id="301b669b-7364-4077-9f10-38804398c286" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Controller/PartController.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Controller/PartController.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Entity/Project.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Project.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Entity/SequenceCriteria.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/SequenceCriteria.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Repository/PartRepository.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Repository/PartRepository.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Service/PartService.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Service/PartService.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -259,6 +263,13 @@
       <workItem from="1741722931292" duration="231000" />
       <workItem from="1741723644707" duration="1566000" />
       <workItem from="1741786864422" duration="105000" />
+      <workItem from="1741791249980" duration="712000" />
+      <workItem from="1741792019092" duration="9000" />
+      <workItem from="1741792215967" duration="4422000" />
+      <workItem from="1741799239037" duration="16000" />
+      <workItem from="1741799325838" duration="540000" />
+      <workItem from="1741958762159" duration="231000" />
+      <workItem from="1741960444544" duration="87000" />
     </task>
     <servers />
   </component>
