@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Service\PartService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
@@ -11,14 +12,14 @@ use App\Repository\PartRepository;
 class PartController extends AbstractController
 {
     #[Route('/api/part/update', name: 'api_part_update', methods: ['PUT', 'POST'])]
-    public function updatePart(Request $request,  PartRepository $partRepository): JsonResponse
+    public function updatePart(Request $request,  PartService $partService): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
         if (empty($data['name'])) {
             return $this->json(['error' => 'Le nom est obligatoire'], 400);
         }
-        $part = $partRepository->createOrUpdate($data);
-        return $this->json($part, 200, []);
+        $result = $partService->createOrUpdate($data);
+        return $this->json($result);
     }
 
     #[Route('/api/part/delete/{id}', name: 'api_part_delete', methods: ['DELETE'])]

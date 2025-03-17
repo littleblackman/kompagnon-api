@@ -16,7 +16,6 @@ class SequenceCriteria
     #[ORM\JoinColumn(nullable: false)]
     private Sequence $sequence;
 
-
     #[ORM\ManyToOne(targetEntity: Criteria::class)]
     #[ORM\JoinColumn(nullable: false)]
     private Criteria $criteria;
