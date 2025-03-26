@@ -49,6 +49,13 @@ class Sequence
     #[ORM\OneToMany(targetEntity: SequencePersonnage::class, mappedBy: 'sequence', cascade: ['persist', 'remove'])]
     private Collection $sequencePersonnages;
 
+    #[ORM\Column(name: "part_id", type: "integer")]
+    private int $part_id;
+
+
+    #[ORM\Column(name: "information", type: "string", length: 255)]
+    private string $information;
+
     public function __construct()
     {
         $this->scenes = new ArrayCollection();
@@ -201,6 +208,22 @@ class Sequence
         }
         return $this;
     }
+
+    public function getPartId(): int
+    {
+        return $this->part_id;
+    }
+
+    public function getInformation(): string
+    {
+        return $this->information;
+    }
+
+    public function setInformation(string $information): void
+    {
+        $this->information = $information;
+    }
+
 
 
 }
