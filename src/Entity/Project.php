@@ -4,12 +4,10 @@ namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
 use App\Entity\Traits\Timestampable;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
-use Doctrine\Common\Collections\Collection;
-use Doctrine\Common\Collections\ArrayCollection;
-
-
 
 #[ApiResource(
     normalizationContext: ['groups' => ['project:read']],
@@ -35,10 +33,12 @@ class Project
     #[Groups(['project:read', 'project:write'])]
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $description = null;
+
     #[Groups(['project:read', 'project:write'])]
     #[ORM\ManyToOne(targetEntity: Type::class)]
     private Type $type;
 
+    #[Groups(['project:read'])]
     #[ORM\OneToMany(targetEntity: Part::class, mappedBy: 'project', cascade: ['persist', 'remove'])]
     #[ORM\OrderBy(['position' => 'ASC'])]
     private Collection $parts;
@@ -51,7 +51,6 @@ class Project
     {
         $this->parts = new ArrayCollection();
     }
-
 
     public function getId(): ?int
     {
@@ -130,6 +129,7 @@ class Project
                 $part->setProject(null);
             }
         }
+
         return $this;
     }
 }

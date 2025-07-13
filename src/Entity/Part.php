@@ -9,33 +9,41 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
-
 #[ORM\Entity]
-#[ApiResource]
+#[ApiResource(
+    normalizationContext: ['groups' => ['part:read']],
+    denormalizationContext: ['groups' => ['part:write']]
+)]
 class Part
 {
     use Timestampable;
 
-
     #[ORM\Id, ORM\GeneratedValue, ORM\Column(type: 'integer')]
+    #[Groups(['part:read', 'project:read'])] // on veut que Project affiche l’ID
     private ?int $id = null;
 
     #[ORM\Column(type: 'string', length: 255)]
+    #[Groups(['part:read', 'part:write', 'project:read'])] // affiché depuis Project
     private string $name;
 
     #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(['part:read', 'part:write', 'project:read'])]
     private ?string $description = null;
 
     #[ORM\Column(type: 'integer')]
+    #[Groups(['part:read', 'part:write', 'project:read'])]
     private int $position;
 
-    #[ORM\ManyToOne(targetEntity: Project::class)]
+    #[ORM\ManyToOne(targetEntity: Project::class, inversedBy: 'parts')]
+    #[Groups(['part:read', 'part:write'])]
     private Project $project;
 
     #[ORM\ManyToOne(targetEntity: Status::class)]
+    #[Groups(['part:read', 'part:write'])]
     private Status $status;
 
     #[ORM\OneToMany(targetEntity: Sequence::class, mappedBy: 'part', cascade: ['persist', 'remove'])]
+    #[Groups(['part:read'])]
     private Collection $sequences;
 
     public function __construct()
@@ -61,6 +69,7 @@ class Part
     public function setName(string $name): self
     {
         $this->name = $name;
+
         return $this;
     }
 
@@ -72,6 +81,7 @@ class Part
     public function setDescription(?string $description): self
     {
         $this->description = $description;
+
         return $this;
     }
 
@@ -83,6 +93,7 @@ class Part
     public function setPosition(int $position): self
     {
         $this->position = $position;
+
         return $this;
     }
 
@@ -94,6 +105,7 @@ class Part
     public function setProject(Project $project): self
     {
         $this->project = $project;
+
         return $this;
     }
 
@@ -105,6 +117,7 @@ class Part
     public function setStatus(Status $status): self
     {
         $this->status = $status;
+
         return $this;
     }
 
@@ -119,6 +132,7 @@ class Part
             $this->sequences[] = $sequence;
             $sequence->setPart($this);
         }
+
         return $this;
     }
 
@@ -129,7 +143,7 @@ class Part
                 $sequence->setPart(null);
             }
         }
+
         return $this;
     }
-
 }

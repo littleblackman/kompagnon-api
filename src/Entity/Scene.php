@@ -8,30 +8,40 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity]
-#[ApiResource]
+#[ApiResource(
+    normalizationContext: ['groups' => ['scene:read']],
+    denormalizationContext: ['groups' => ['scene:write']]
+)]
 class Scene
 {
     use Timestampable;
 
     #[ORM\Id, ORM\GeneratedValue, ORM\Column(type: 'integer')]
+    #[Groups(['scene:read', 'sequence:read'])]
     private ?int $id = null;
 
     #[ORM\Column(type: 'string', length: 255)]
+    #[Groups(['scene:read', 'scene:write', 'sequence:read'])]
     private string $name;
 
     #[ORM\Column(type: 'integer')]
+    #[Groups(['scene:read', 'scene:write', 'sequence:read'])]
     private int $position;
 
     #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(['scene:read', 'scene:write', 'sequence:read'])]
     private ?string $description = null;
 
     #[ORM\Column(type: 'text')]
+    #[Groups(['scene:read', 'scene:write', 'sequence:read'])]
     private string $content;
 
-    #[ORM\ManyToOne(targetEntity: Sequence::class)]
+    #[ORM\ManyToOne(targetEntity: Sequence::class, inversedBy: 'scenes')]
+    #[Groups(['scene:write'])]
     private Sequence $sequence;
 
     #[ORM\ManyToOne(targetEntity: Status::class)]
+    #[Groups(['scene:read', 'scene:write'])]
     private Status $status;
 
     public function getId(): ?int
@@ -97,8 +107,13 @@ class Scene
     public function setPosition(int $position): self
     {
         $this->position = $position;
+
         return $this;
     }
 
-
+    #[Groups(['scene:read', 'sequence:read'])]
+    public function getSequenceId(): ?int
+    {
+        return $this->sequence?->getId();
+    }
 }

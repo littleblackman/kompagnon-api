@@ -9,38 +9,53 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
-
 #[ORM\Entity]
-#[ApiResource]
+#[ApiResource(
+    normalizationContext: ['groups' => ['sequence:read', 'part:read']],
+    denormalizationContext: ['groups' => ['sequence:write']]
+)]
 class Sequence
 {
     use Timestampable;
 
     #[ORM\Id, ORM\GeneratedValue, ORM\Column(type: 'integer')]
+    #[Groups(['sequence:read', 'part:read'])]
     private ?int $id = null;
 
     #[ORM\Column(type: 'string', length: 255)]
+    #[Groups(['sequence:read', 'sequence:write', 'part:read'])]
     private string $name;
 
     #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(['sequence:read', 'sequence:write', 'part:read'])]
     private ?string $description = null;
 
     #[ORM\Column(type: 'integer')]
+    #[Groups(['sequence:read', 'sequence:write', 'part:read'])]
     private int $position;
 
-    #[ORM\ManyToOne(targetEntity: Part::class)]
+    #[ORM\Column(type: 'string', length: 255)]
+    #[Groups(['sequence:read', 'sequence:write', 'part:read'])]
+    private string $information;
+
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[Groups(['sequence:read', 'sequence:write', 'part:read'])]
+    private ?string $intention = null;
+
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[Groups(['sequence:read', 'sequence:write', 'part:read'])]
+    private ?string $aesthetic_idea = null;
+
+    #[ORM\ManyToOne(targetEntity: Part::class, inversedBy: 'sequences')]
+    #[Groups(['sequence:read', 'sequence:write'])] // pas dans part:read, pour éviter la boucle
     private Part $part;
 
     #[ORM\ManyToOne(targetEntity: Status::class)]
+    #[Groups(['sequence:read', 'sequence:write', 'part:read'])]
     private Status $status;
 
-    #[ORM\Column(type: 'string', length: 255)]
-    private ?string $intention = null;
-
-    #[ORM\Column(type: 'string', length: 255)]
-    private ?string $aesthetic_idea = null;
-
     #[ORM\OneToMany(targetEntity: Scene::class, mappedBy: 'sequence', cascade: ['persist', 'remove'])]
+    #[Groups(['sequence:read'])]
     private Collection $scenes;
 
     #[ORM\OneToMany(targetEntity: SequenceCriteria::class, mappedBy: 'sequence', cascade: ['persist', 'remove'])]
@@ -48,13 +63,6 @@ class Sequence
 
     #[ORM\OneToMany(targetEntity: SequencePersonnage::class, mappedBy: 'sequence', cascade: ['persist', 'remove'])]
     private Collection $sequencePersonnages;
-
-    #[ORM\Column(name: "part_id", type: "integer")]
-    private int $part_id;
-
-
-    #[ORM\Column(name: "information", type: "string", length: 255)]
-    private string $information;
 
     public function __construct()
     {
@@ -143,75 +151,14 @@ class Sequence
         return $this->scenes;
     }
 
-    public function addScene(Scene $scene): void
-    {
-        if (!$this->scenes->contains($scene)) {
-            $this->scenes[] = $scene;
-            $scene->setSequence($this);
-        }
-    }
-
-    public function removeScene(Scene $scene): self
-    {
-        if ($this->scenes->removeElement($scene)) {
-            if ($scene->getSequence() === $this) {
-                $scene->setSequence(null);
-            }
-        }
-        return $this;
-    }
-
     public function getSequenceCriterias(): Collection
     {
         return $this->sequenceCriterias;
     }
 
-    public function addSequenceCriteria(SequenceCriteria $sequenceCriteria): self
-    {
-        if (!$this->sequenceCriterias->contains($sequenceCriteria)) {
-            $this->sequenceCriterias->add($sequenceCriteria);
-            $sequenceCriteria->setSequence($this);
-        }
-        return $this;
-    }
-
-    public function removeSequenceCriteria(SequenceCriteria $sequenceCriteria): self
-    {
-        if ($this->sequenceCriterias->removeElement($sequenceCriteria)) {
-            if ($sequenceCriteria->getSequence() === $this) {
-                $sequenceCriteria->setSequence(null);
-            }
-        }
-        return $this;
-    }
-
     public function getSequencePersonnages(): Collection
     {
         return $this->sequencePersonnages;
-    }
-
-    public function addSequencePersonnage(SequencePersonnage $sequencePersonnage): self
-    {
-        if (!$this->sequencePersonnages->contains($sequencePersonnage)) {
-            $this->sequencePersonnages->add($sequencePersonnage);
-            $sequencePersonnage->setSequence($this);
-        }
-        return $this;
-    }
-
-    public function removeSequencePersonnage(SequencePersonnage $sequencePersonnage): self
-    {
-        if ($this->sequencePersonnages->removeElement($sequencePersonnage)) {
-            if ($sequencePersonnage->getSequence() === $this) {
-                $sequencePersonnage->setSequence(null);
-            }
-        }
-        return $this;
-    }
-
-    public function getPartId(): int
-    {
-        return $this->part_id;
     }
 
     public function getInformation(): string
@@ -223,7 +170,4 @@ class Sequence
     {
         $this->information = $information;
     }
-
-
-
 }
