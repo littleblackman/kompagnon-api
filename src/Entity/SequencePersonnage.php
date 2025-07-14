@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity]
 class SequencePersonnage
@@ -10,6 +11,7 @@ class SequencePersonnage
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
+    #[Groups(['sequence:read', 'part:read'])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: Sequence::class, inversedBy: 'sequencePersonnages')]
@@ -18,7 +20,7 @@ class SequencePersonnage
 
     #[ORM\ManyToOne(targetEntity: Personnage::class, inversedBy: 'sequencePersonnages')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(["metadata_read"])]
+    #[Groups(['sequence:read', 'part:read'])]
     private Personnage $personnage;
 
 
@@ -38,7 +40,7 @@ class SequencePersonnage
         return $this;
     }
 
-    public function getPersonage(): Personnage
+    public function getPersonnage(): Personnage
     {
         return $this->personnage;
     }

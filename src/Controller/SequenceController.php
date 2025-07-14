@@ -14,6 +14,7 @@ class SequenceController extends AbstractController
     public function createOrUpdateSequence(SequenceService $sequenceService, Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
+        
         $sequence = $sequenceService->createOrUpdate($data);
         
         // Configuration de la sérialisation

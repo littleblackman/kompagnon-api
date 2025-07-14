@@ -6,8 +6,10 @@ use App\Entity\Sequence;
 use App\Repository\PartRepository;
 use App\Repository\SequenceRepository;
 use App\Repository\StatusRepository;
+use App\Repository\CriteriaRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Entity\Part;
+use App\Entity\SequenceCriteria;
 
 
 class SequenceService
@@ -17,13 +19,15 @@ class SequenceService
     private PartRepository $partRepository;
     private EntityManagerInterface $entityManager;
     private StatusRepository $statusRepository;
+    private CriteriaRepository $criteriaRepository;
 
-    public function __construct( SequenceRepository $sequenceRepository, PartRepository $partRepository, EntityManagerInterface $entityManager, StatusRepository $statusRepository )
+    public function __construct( SequenceRepository $sequenceRepository, PartRepository $partRepository, EntityManagerInterface $entityManager, StatusRepository $statusRepository, CriteriaRepository $criteriaRepository )
     {
         $this->sequenceRepository = $sequenceRepository;
         $this->partRepository = $partRepository;
         $this->entityManager = $entityManager;
         $this->statusRepository = $statusRepository;
+        $this->criteriaRepository = $criteriaRepository;
     }
 
     /**
@@ -61,6 +65,10 @@ class SequenceService
         
         $sequence->setName($data['name']);
         $sequence->setDescription($data['description']);
+        $sequence->setIntention($data['intention'] ?? null);
+        $sequence->setAestheticIdea($data['aesthetic_idea'] ?? null);
+        $sequence->setInformation($data['information'] ?? true);
+        
         $em->persist($sequence);
         
         // Flush final pour s'assurer que tous les changements sont persistés
@@ -118,6 +126,40 @@ class SequenceService
                 $this->entityManager->persist($seq);
             }
         }
+        $this->entityManager->flush();
+    }
+
+    /**
+     * Met à jour ou crée un critère pour une séquence
+     * @param array $data contient sequenceId, criteriaId, value
+     */
+    public function updateCriteria(array $data): void
+    {
+        $sequence = $this->sequenceRepository->find($data['sequenceId']);
+        $criteria = $this->criteriaRepository->find($data['criteriaId']);
+        
+        if (!$sequence || !$criteria) {
+            throw new \Exception('Séquence ou critère non trouvé');
+        }
+
+        // Chercher si l'association existe déjà
+        $sequenceCriteria = $this->entityManager->getRepository(SequenceCriteria::class)
+            ->findOneBy([
+                'sequence' => $sequence,
+                'criteria' => $criteria
+            ]);
+
+        if (!$sequenceCriteria) {
+            // Créer nouvelle association
+            $sequenceCriteria = new SequenceCriteria();
+            $sequenceCriteria->setSequence($sequence);
+            $sequenceCriteria->setCriteria($criteria);
+        }
+
+        // Mettre à jour la valeur
+        $sequenceCriteria->setRating($data['value']);
+        
+        $this->entityManager->persist($sequenceCriteria);
         $this->entityManager->flush();
     }
 }

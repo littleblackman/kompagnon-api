@@ -17,23 +17,23 @@ class Personnage
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(["metadata_read"])]
+    #[Groups(["metadata_read", "sequence:read", "part:read"])]
     private ?int $id = null;
 
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(["metadata_read"])]
+    #[Groups(["metadata_read", "sequence:read", "part:read"])]
     private string $firstName;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    #[Groups(["metadata_read"])]
+    #[Groups(["metadata_read", "sequence:read", "part:read"])]
     private string $lastName;
 
     #[ORM\Column(type: 'text', nullable: true)]
-    #[Groups(["metadata_read"])]
+    #[Groups(["metadata_read", "sequence:read", "part:read"])]
     private ?string $background = null;
 
     #[ORM\Column(type: 'integer', nullable: true)]
-    #[Groups(["metadata_read"])]
+    #[Groups(["metadata_read", "sequence:read", "part:read"])]
     private ?int $age = null;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
@@ -53,11 +53,11 @@ class Personnage
     private ?string $images = null;
 
     #[ORM\Column(type: 'integer', nullable: true)]
-    #[Groups(["metadata_read"])]
+    #[Groups(["metadata_read", "sequence:read", "part:read"])]
     private ?int $level = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
-    #[Groups(["metadata_read"])]
+    #[Groups(["metadata_read", "sequence:read", "part:read"])]
     private ?string $analysis = null;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
@@ -149,5 +149,95 @@ class Personnage
         return $this;
     }
 
+    public function getAge(): ?int
+    {
+        return $this->age;
+    }
+
+    public function setAge(?int $age): self
+    {
+        $this->age = $age;
+        return $this;
+    }
+
+    public function getLevel(): ?int
+    {
+        return $this->level;
+    }
+
+    public function setLevel(?int $level): self
+    {
+        $this->level = $level;
+        return $this;
+    }
+
+    public function getAnalysis(): ?string
+    {
+        return $this->analysis;
+    }
+
+    public function setAnalysis(?string $analysis): self
+    {
+        $this->analysis = $analysis;
+        return $this;
+    }
+
+    public function getOrigin(): ?string
+    {
+        return $this->origin;
+    }
+
+    public function setOrigin(?string $origin): self
+    {
+        $this->origin = $origin;
+        return $this;
+    }
+
+    public function getAvatar(): ?string
+    {
+        return $this->avatar;
+    }
+
+    public function setAvatar(?string $avatar): self
+    {
+        $this->avatar = $avatar;
+        return $this;
+    }
+
+    public function getImages(): ?string
+    {
+        return $this->images;
+    }
+
+    public function setImages(?string $images): self
+    {
+        $this->images = $images;
+        return $this;
+    }
+
+    public function getStrength(): ?string
+    {
+        return $this->strength;
+    }
+
+    public function setStrength(?string $strength): self
+    {
+        $this->strength = $strength;
+        return $this;
+    }
+
+    public function getWeakness(): ?string
+    {
+        return $this->weakness;
+    }
+
+    public function setWeakness(?string $weakness): self
+    {
+        $this->weakness = $weakness;
+        return $this;
+
+    }
+
+   
 
 }

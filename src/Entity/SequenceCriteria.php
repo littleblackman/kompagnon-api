@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity]
 class SequenceCriteria
@@ -10,6 +11,7 @@ class SequenceCriteria
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
+    #[Groups(['sequence:read', 'part:read'])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: Sequence::class, inversedBy: 'sequenceCriterias')]
@@ -18,9 +20,11 @@ class SequenceCriteria
 
     #[ORM\ManyToOne(targetEntity: Criteria::class)]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['sequence:read', 'part:read'])]
     private Criteria $criteria;
 
     #[ORM\Column(type: 'integer')]
+    #[Groups(['sequence:read', 'part:read'])]
     private int $rating;
 
     public function getId(): ?int
