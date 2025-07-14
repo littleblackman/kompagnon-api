@@ -11,11 +11,11 @@ class Criteria
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(["metadata_read"])]
+    #[Groups(["metadata_read", "sequence:read", "part:read"])]
     private ?int $id = null;
 
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(["metadata_read"])]
+    #[Groups(["metadata_read", "sequence:read", "part:read"])]
     private string $name;
 
     #[ORM\Column(type: 'text', nullable: true)]

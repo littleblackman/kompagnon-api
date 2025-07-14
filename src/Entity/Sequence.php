@@ -59,9 +59,11 @@ class Sequence
     private Collection $scenes;
 
     #[ORM\OneToMany(targetEntity: SequenceCriteria::class, mappedBy: 'sequence', cascade: ['persist', 'remove'])]
+    #[Groups(['sequence:read', 'part:read'])]
     private Collection $sequenceCriterias;
 
     #[ORM\OneToMany(targetEntity: SequencePersonnage::class, mappedBy: 'sequence', cascade: ['persist', 'remove'])]
+    #[Groups(['sequence:read', 'part:read'])]
     private Collection $sequencePersonnages;
 
     public function __construct()
