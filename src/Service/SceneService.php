@@ -29,8 +29,10 @@ class SceneService
         $em = $this->entityManager;
 
         if (isset($data['id'])) {
+            // UPDATE - Mise à jour d'une scène existante
             $scene = $this->sceneRepository->find($data['id']);
         } else {
+            // CREATE - Création d'une nouvelle scène
             $scene = new Scene();
             $sequence = $this->sequenceRepository->find($data['sequence_id']);
             $status = $this->statusRepository->find(6);
@@ -38,54 +40,48 @@ class SceneService
             $scene->setStatus($status);
         }
 
-        // Gestion de la position
-        if (isset($data['afterSceneId'])) {
-            $afterScene = $this->sceneRepository->find($data['afterSceneId']);
-            if ($afterScene) {
-                // Décaler d'abord toutes les scènes suivantes
-                $this->shiftScenes($afterScene->getSequence(), $afterScene->getPosition() + 1);
-                // Puis positionner la nouvelle scène
-                $scene->setPosition($afterScene->getPosition() + 1);
-            }
-        } else {
-            // Si pas de scène de référence, placer au début
-            $this->shiftScenes($scene->getSequence(), 1);
-            $scene->setPosition(1);
+        // PLUS DE LOGIQUE DE POSITION - Le frontend gère tout !
+        // On sauvegarde simplement les données reçues
+        $scene->setName($data['name']);
+        
+        // Description optionnelle
+        if (isset($data['description'])) {
+            $scene->setDescription($data['description']);
+        }
+        
+        $scene->setContent($data['content']);
+        
+        // Position calculée côté frontend
+        if (isset($data['position'])) {
+            $scene->setPosition($data['position']);
         }
 
-        $scene->setName($data['name']);
-        $scene->setDescription($data['description']);
-        $scene->setContent($data['content']);
         $em->persist($scene);
-
-        // Flush final pour s'assurer que tous les changements sont persistés
         $em->flush();
 
         return $scene;
     }
 
-    /**
-     * Décale toutes les scènes à partir d'une position donnée.
-     */
-    private function shiftScenes(Sequence $sequence, int $startPosition): void
-    {
-        $scenes = $this->sceneRepository->findBy(
-            ['sequence' => $sequence],
-            ['position' => 'DESC']
-        );
 
-        foreach ($scenes as $scene) {
-            if ($scene->getPosition() >= $startPosition) {
-                $scene->setPosition($scene->getPosition() + 1);
-                $this->entityManager->persist($scene);
+    /**
+     * Met à jour l'ordre des scènes (batch update des positions).
+     */
+    public function updateOrder(array $scenePositions): void
+    {
+        foreach ($scenePositions as $item) {
+            if (isset($item['id']) && isset($item['position'])) {
+                $scene = $this->sceneRepository->find($item['id']);
+                if ($scene) {
+                    $scene->setPosition($item['position']);
+                    $this->entityManager->persist($scene);
+                }
             }
         }
-        // Flush pour s'assurer que les changements sont persistés
         $this->entityManager->flush();
     }
 
     /**
-     * Supprime une scène et réorganise les positions.
+     * Supprime une scène (sans réorganiser les positions - géré côté frontend).
      */
     public function delete(int $id): void
     {
@@ -94,25 +90,8 @@ class SceneService
             throw new \Exception('Scene non trouvée');
         }
 
-        $sequence = $scene->getSequence();
-        $position = $scene->getPosition();
-
-        // Supprimer la scène
+        // Supprimer la scène - Le frontend gère la réorganisation des positions
         $this->entityManager->remove($scene);
-        $this->entityManager->flush();
-
-        // Réorganiser les positions des scènes suivantes
-        $scenes = $this->sceneRepository->findBy(
-            ['sequence' => $sequence],
-            ['position' => 'ASC']
-        );
-
-        foreach ($scenes as $scene) {
-            if ($scene->getPosition() > $position) {
-                $scene->setPosition($scene->getPosition() - 1);
-                $this->entityManager->persist($scene);
-            }
-        }
         $this->entityManager->flush();
     }
 }

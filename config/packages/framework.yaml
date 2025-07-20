@@ -5,6 +5,11 @@ framework:
     # Note that the session will be started ONLY if you read or write from it.
     session: true
 
+    serializer:
+        default_context:
+            enable_max_depth: true
+            circular_reference_limit: 1
+
     #esi: true
     #fragments: true
    

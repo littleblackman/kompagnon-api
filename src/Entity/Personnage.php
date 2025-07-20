@@ -7,6 +7,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Serializer\Attribute\MaxDepth;
 
 #[ORM\Entity]
 class Personnage
@@ -17,27 +18,27 @@ class Personnage
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(["metadata_read", "sequence:read", "part:read"])]
+    #[Groups(["personnage:read", "sequence:read", "part:read", "project:read"])]
     private ?int $id = null;
 
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(["metadata_read", "sequence:read", "part:read"])]
+    #[Groups(["personnage:read", "sequence:read", "part:read", "project:read"])]
     private string $firstName;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    #[Groups(["metadata_read", "sequence:read", "part:read"])]
+    #[Groups(["personnage:read", "sequence:read", "part:read", "project:read"])]
     private string $lastName;
 
     #[ORM\Column(type: 'text', nullable: true)]
-    #[Groups(["metadata_read", "sequence:read", "part:read"])]
+    #[Groups(["personnage:read", "sequence:read", "part:read", "project:read"])]
     private ?string $background = null;
 
     #[ORM\Column(type: 'integer', nullable: true)]
-    #[Groups(["metadata_read", "sequence:read", "part:read"])]
+    #[Groups(["personnage:read", "sequence:read", "part:read", "project:read"])]
     private ?int $age = null;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    #[Groups(["metadata_read"])]
+    #[Groups(["personnage:read"])]
     private ?string $origin = null;
 
     #[ORM\ManyToOne(targetEntity: Project::class, inversedBy: 'personnages')]
@@ -45,30 +46,31 @@ class Personnage
     private Project $project;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    #[Groups(["metadata_read"])]
+    #[Groups(["personnage:read"])]
     private ?string $avatar = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
-    #[Groups(["metadata_read"])]
+    #[Groups(["personnage:read", "personnage:write", "sequence:read", "part:read", "project:read"])]
     private ?string $images = null;
 
     #[ORM\Column(type: 'integer', nullable: true)]
-    #[Groups(["metadata_read", "sequence:read", "part:read"])]
+    #[Groups(["personnage:read", "sequence:read", "part:read", "project:read"])]
     private ?int $level = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
-    #[Groups(["metadata_read", "sequence:read", "part:read"])]
+    #[Groups(["personnage:read", "sequence:read", "part:read", "project:read"])]
     private ?string $analysis = null;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    #[Groups(["metadata_read"])]
+    #[Groups(["personnage:read"])]
     private ?string $strength = null;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    #[Groups(["metadata_read"])]
+    #[Groups(["personnage:read"])]
     private ?string $weakness = null;
 
     #[ORM\OneToMany(targetEntity: SequencePersonnage::class, mappedBy: 'personnage', cascade: ['persist', 'remove'])]
+    #[MaxDepth(1)]
     private Collection $sequencePersonnages;
 
     public function __construct()
@@ -235,9 +237,45 @@ class Personnage
     {
         $this->weakness = $weakness;
         return $this;
-
     }
 
-   
+    /**
+     * Get avatar (first image from images array)
+     */
+    #[Groups(["personnage:read", "sequence:read", "part:read", "project:read"])]
+    public function getAvatarUrl(): ?string
+    {
+        if (!$this->images) {
+            return null;
+        }
+        
+        $imagesArray = json_decode($this->images, true);
+        if (is_array($imagesArray) && !empty($imagesArray)) {
+            return $imagesArray[0];
+        }
+        
+        return null;
+    }
 
+    /**
+     * Get images as array
+     */
+    public function getImagesArray(): array
+    {
+        if (!$this->images) {
+            return [];
+        }
+        
+        $imagesArray = json_decode($this->images, true);
+        return is_array($imagesArray) ? $imagesArray : [];
+    }
+
+    /**
+     * Set images from array
+     */
+    public function setImagesArray(array $images): self
+    {
+        $this->images = json_encode($images);
+        return $this;
+    }
 }

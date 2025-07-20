@@ -8,6 +8,7 @@ use App\Repository\ProjectRepository;
 use App\Repository\PersonnageRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Repository\SequencePersonnageRepository;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 class PersonnageService
 {
@@ -45,6 +46,8 @@ class PersonnageService
         $this->em->persist($personnage);
         $this->em->flush();
 
+
+        // is sequenceId is set, create or update the link with SequencePersonnage
         if (isset($data['sequenceId']) && $data['sequenceId']) {
             
             $sequence = $this->em->getReference('App\Entity\Sequence', $data['sequenceId']);
@@ -113,6 +116,67 @@ class PersonnageService
         }
 
         $this->em->remove($personnage);
+        $this->em->flush();
+
+        return true;
+    }
+
+    /**
+     * Upload images for a personnage
+     * @param int $personnageId
+     * @param UploadedFile[] $files
+     * @return array Array of uploaded image URLs
+     */
+    public function uploadImages(int $personnageId, array $files): array
+    {
+        $personnage = $this->personnageRepository->find($personnageId);
+        if (!$personnage) {
+            throw new \Exception('Personnage non trouvé');
+        }
+
+        // Create upload directory if it doesn't exist
+        $uploadDir = 'uploads/personnages';
+        $publicDir = __DIR__ . '/../../public/' . $uploadDir;
+        
+        if (!is_dir($publicDir)) {
+            mkdir($publicDir, 0755, true);
+        }
+
+        $uploadedUrls = [];
+        $currentImages = $personnage->getImagesArray();
+
+        foreach ($files as $file) {
+            // Generate unique filename
+            $filename = 'perso-' . $personnageId . '-' . uniqid() . '.' . $file->guessExtension();
+            $filePath = $publicDir . '/' . $filename;
+            
+            // Move file
+            $file->move($publicDir, $filename);
+            
+            // Store relative URL
+            $relativeUrl = $uploadDir . '/' . $filename;
+            $uploadedUrls[] = $relativeUrl;
+            $currentImages[] = $relativeUrl;
+        }
+
+        // Update personnage with new images
+        $personnage->setImagesArray($currentImages);
+        $this->em->flush();
+
+        return $uploadedUrls;
+    }
+
+    /**
+     * Reorder images for a personnage (for avatar selection)
+     */
+    public function reorderImages(int $personnageId, array $orderedUrls): bool
+    {
+        $personnage = $this->personnageRepository->find($personnageId);
+        if (!$personnage) {
+            return false;
+        }
+
+        $personnage->setImagesArray($orderedUrls);
         $this->em->flush();
 
         return true;

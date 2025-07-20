@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Attribute\MaxDepth;
 
 #[ORM\Entity]
 class SequencePersonnage
@@ -16,12 +17,14 @@ class SequencePersonnage
 
     #[ORM\ManyToOne(targetEntity: Sequence::class, inversedBy: 'sequencePersonnages')]
     #[ORM\JoinColumn(nullable: false)]
+    #[MaxDepth(1)]
     private Sequence $sequence;
 
     #[ORM\ManyToOne(targetEntity: Personnage::class, inversedBy: 'sequencePersonnages')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true)]
     #[Groups(['sequence:read', 'part:read'])]
-    private Personnage $personnage;
+    #[MaxDepth(1)]
+    private ?Personnage $personnage;
 
 
     public function getId(): ?int
@@ -40,12 +43,12 @@ class SequencePersonnage
         return $this;
     }
 
-    public function getPersonnage(): Personnage
+    public function getPersonnage(): ?Personnage
     {
         return $this->personnage;
     }
 
-    public function setPersonnage(Personnage $personnage): self
+    public function setPersonnage(?Personnage $personnage): self
     {
         $this->personnage = $personnage;
         return $this;

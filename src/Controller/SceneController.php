@@ -28,6 +28,15 @@ class SceneController extends AbstractController
         return $this->json(['scene' => $scene], 200, [], $context);
     }
 
+    #[Route('/api/scene/order', name: 'api_scene_order', methods: ['POST'])]
+    public function updateSceneOrder(SceneService $sceneService, Request $request): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+        $sceneService->updateOrder($data['scenes']);
+
+        return $this->json(['success' => true], 200, []);
+    }
+
     #[Route('/api/scene/delete/{id}', name: 'api_scene_delete', methods: ['DELETE'])]
     public function deleteScene(SceneService $sceneService, int $id): JsonResponse
     {

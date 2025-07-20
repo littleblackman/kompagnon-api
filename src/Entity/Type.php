@@ -14,15 +14,15 @@ use Symfony\Component\Serializer\Annotation\Groups;
 class Type
 {
     #[ORM\Id, ORM\GeneratedValue, ORM\Column(type: 'integer')]
-    #[Groups(['project:read'])]
+    #[Groups(['project:read', 'metadata_read'])]
     private ?int $id = null;
 
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['project:read', 'project:write'])]
+    #[Groups(['project:read', 'project:write', 'metadata_read'])]
     private string $name;
 
     #[ORM\Column(type: 'text', nullable: true)]
-    #[Groups(['project:read', 'project:write'])]
+    #[Groups(['project:read', 'project:write', 'metadata_read'])]
     private ?string $description = null;
 
     public function getId(): ?int
