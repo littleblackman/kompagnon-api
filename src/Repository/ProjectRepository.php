@@ -45,4 +45,17 @@ class ProjectRepository extends ServiceEntityRepository
 
         return $query->getOneOrNullResult(AbstractQuery::HYDRATE_ARRAY);
     }
+
+
+    public function slugExists(string $slug): bool
+    {
+        return (bool) $this->createQueryBuilder('p')
+            ->select('1')
+            ->where('p.slug = :slug')
+            ->setParameter('slug', $slug)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
 }
