@@ -47,9 +47,14 @@ class Project
     #[ORM\ManyToOne(targetEntity: User::class)]
     private User $user;
 
+    #[Groups(['project:read'])]
+    #[ORM\OneToMany(targetEntity: Personnage::class, mappedBy: 'project', cascade: ['persist', 'remove'])]
+    private Collection $personnages;
+
     public function __construct()
     {
         $this->parts = new ArrayCollection();
+        $this->personnages = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -127,6 +132,32 @@ class Project
         if ($this->parts->removeElement($part)) {
             if ($part->getProject() === $this) {
                 $part->setProject(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getPersonnages(): Collection
+    {
+        return $this->personnages;
+    }
+
+    public function addPersonnage(Personnage $personnage): self
+    {
+        if (!$this->personnages->contains($personnage)) {
+            $this->personnages->add($personnage);
+            $personnage->setProject($this);
+        }
+
+        return $this;
+    }
+
+    public function removePersonnage(Personnage $personnage): self
+    {
+        if ($this->personnages->removeElement($personnage)) {
+            if ($personnage->getProject() === $this) {
+                $personnage->setProject(null);
             }
         }
 

@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Attribute\MaxDepth;
 
 #[ORM\Entity]
 #[ApiResource(
@@ -64,6 +65,7 @@ class Sequence
 
     #[ORM\OneToMany(targetEntity: SequencePersonnage::class, mappedBy: 'sequence', cascade: ['persist', 'remove'])]
     #[Groups(['sequence:read', 'part:read'])]
+    #[MaxDepth(1)]
     private Collection $sequencePersonnages;
 
     public function __construct()

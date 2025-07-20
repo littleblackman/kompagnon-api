@@ -6,6 +6,7 @@ use App\Entity\Project;
 use App\Repository\ProjectRepository;
 use App\Repository\PartRepository;
 use App\Repository\SequenceRepository;
+use App\Repository\TypeRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
 class ProjectService
@@ -13,17 +14,20 @@ class ProjectService
     private ProjectRepository $projectRepository;
     private PartRepository $partRepository;
     private SequenceRepository $sequenceRepository;
+    private TypeRepository $typeRepository;
     private EntityManagerInterface $entityManager;
 
     public function __construct(
         ProjectRepository $projectRepository,
         PartRepository $partRepository,
         SequenceRepository $sequenceRepository,
+        TypeRepository $typeRepository,
         EntityManagerInterface $entityManager
     ) {
         $this->projectRepository = $projectRepository;
         $this->partRepository = $partRepository;
         $this->sequenceRepository = $sequenceRepository;
+        $this->typeRepository = $typeRepository;
         $this->entityManager = $entityManager;
     }
 
@@ -56,6 +60,15 @@ class ProjectService
         $project->setName($data['name']);
         $project->setDescription($data['description']);
         $project->setSlug($data['slug']);
+        
+        // Handle type if provided
+        if (isset($data['type']) && is_array($data['type']) && isset($data['type']['id'])) {
+            $type = $this->typeRepository->find($data['type']['id']);
+            if ($type) {
+                $project->setType($type);
+            }
+        }
+        
         $em->persist($project);
         $em->flush();
 
