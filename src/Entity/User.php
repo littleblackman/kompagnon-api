@@ -54,6 +54,34 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private ?string $password = null;
 
+    #[ORM\Column(length: 100, nullable: true)]
+    #[Groups(['project:read', 'project:write'])]
+    private ?string $firstName = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    #[Groups(['project:read', 'project:write'])]
+    private ?string $lastName = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['project:read', 'project:write'])]
+    private ?string $avatar = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(['project:read', 'project:write'])]
+    private ?string $bio = null;
+
+    #[ORM\Column(length: 50, nullable: true)]
+    #[Groups(['project:read', 'project:write'])]
+    private ?string $speciality = null;
+
+    #[ORM\Column(type: 'datetime_immutable')]
+    #[Groups(['project:read'])]
+    private ?\DateTimeImmutable $createdAt = null;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    #[Groups(['project:read'])]
+    private ?\DateTimeImmutable $lastLoginAt = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -127,5 +155,88 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         // If you store any temporary, sensitive data on the user, clear it here
         // $this->plainPassword = null;
+    }
+
+    public function getFirstName(): ?string
+    {
+        return $this->firstName;
+    }
+
+    public function setFirstName(?string $firstName): static
+    {
+        $this->firstName = $firstName;
+        return $this;
+    }
+
+    public function getLastName(): ?string
+    {
+        return $this->lastName;
+    }
+
+    public function setLastName(?string $lastName): static
+    {
+        $this->lastName = $lastName;
+        return $this;
+    }
+
+    public function getFullName(): string
+    {
+        $parts = array_filter([$this->firstName, $this->lastName]);
+        return !empty($parts) ? implode(' ', $parts) : $this->email;
+    }
+
+    public function getAvatar(): ?string
+    {
+        return $this->avatar;
+    }
+
+    public function setAvatar(?string $avatar): static
+    {
+        $this->avatar = $avatar;
+        return $this;
+    }
+
+    public function getBio(): ?string
+    {
+        return $this->bio;
+    }
+
+    public function setBio(?string $bio): static
+    {
+        $this->bio = $bio;
+        return $this;
+    }
+
+    public function getSpeciality(): ?string
+    {
+        return $this->speciality;
+    }
+
+    public function setSpeciality(?string $speciality): static
+    {
+        $this->speciality = $speciality;
+        return $this;
+    }
+
+    public function getCreatedAt(): ?\DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(\DateTimeImmutable $createdAt): static
+    {
+        $this->createdAt = $createdAt;
+        return $this;
+    }
+
+    public function getLastLoginAt(): ?\DateTimeImmutable
+    {
+        return $this->lastLoginAt;
+    }
+
+    public function setLastLoginAt(?\DateTimeImmutable $lastLoginAt): static
+    {
+        $this->lastLoginAt = $lastLoginAt;
+        return $this;
     }
 }

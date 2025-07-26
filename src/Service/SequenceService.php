@@ -130,6 +130,23 @@ class SequenceService
     }
 
     /**
+     * Met à jour l'ordre des séquences (batch update des positions).
+     */
+    public function updateOrder(array $sequencePositions): void
+    {
+        foreach ($sequencePositions as $item) {
+            if (isset($item['id']) && isset($item['position'])) {
+                $sequence = $this->sequenceRepository->find($item['id']);
+                if ($sequence) {
+                    $sequence->setPosition($item['position']);
+                    $this->entityManager->persist($sequence);
+                }
+            }
+        }
+        $this->entityManager->flush();
+    }
+
+    /**
      * Met à jour ou crée un critère pour une séquence
      * @param array $data contient sequenceId, criteriaId, value
      */
