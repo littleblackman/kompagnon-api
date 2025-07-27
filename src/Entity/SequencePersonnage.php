@@ -21,10 +21,10 @@ class SequencePersonnage
     private Sequence $sequence;
 
     #[ORM\ManyToOne(targetEntity: Personnage::class, inversedBy: 'sequencePersonnages')]
-    #[ORM\JoinColumn(nullable: true)]
+    #[ORM\JoinColumn(nullable: false)]
     #[Groups(['sequence:read', 'part:read'])]
     #[MaxDepth(1)]
-    private ?Personnage $personnage;
+    private Personnage $personnage;
 
 
     public function getId(): ?int
@@ -43,12 +43,12 @@ class SequencePersonnage
         return $this;
     }
 
-    public function getPersonnage(): ?Personnage
+    public function getPersonnage(): Personnage
     {
         return $this->personnage;
     }
 
-    public function setPersonnage(?Personnage $personnage): self
+    public function setPersonnage(Personnage $personnage): self
     {
         $this->personnage = $personnage;
         return $this;
