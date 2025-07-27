@@ -127,4 +127,16 @@ class PersonnageController extends AbstractController
             return $this->json(['error' => 'Erreur lors de la réorganisation: ' . $e->getMessage()], 500);
         }
     }
+
+    #[Route('/api/personnage/{slug}/details', name: 'api_personnage_details', methods: ['GET'])]
+    public function getPersonnageDetails(string $slug, PersonnageService $personnageService): JsonResponse
+    {
+        $personnageDetails = $personnageService->getPersonnageDetailsBySlug($slug);
+        
+        if (!$personnageDetails) {
+            return $this->json(['error' => 'Personnage non trouvé'], 404);
+        }
+
+        return $this->json($personnageDetails, 200);
+    }
 }

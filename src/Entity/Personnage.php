@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Entity\Traits\Timestampable;
+use App\Utils\SlugUtils;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -48,6 +49,10 @@ class Personnage
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     #[Groups(["personnage:read"])]
     private ?string $avatar = null;
+
+    #[ORM\Column(type: 'string', length: 255, unique: true)]
+    #[Groups(["personnage:read", "sequence:read", "part:read", "project:read"])]
+    private string $slug;
 
     #[ORM\Column(type: 'text', nullable: true)]
     #[Groups(["personnage:read", "personnage:write", "sequence:read", "part:read", "project:read"])]
@@ -276,6 +281,26 @@ class Personnage
     public function setImagesArray(array $images): self
     {
         $this->images = json_encode($images);
+        return $this;
+    }
+
+    public function getSlug(): string
+    {
+        return $this->slug;
+    }
+
+    public function setSlug(string $slug): self
+    {
+        $this->slug = $slug;
+        return $this;
+    }
+
+    /**
+     * Generate and set slug from first and last name
+     */
+    public function generateSlug(): self
+    {
+        $this->slug = SlugUtils::createPersonnageSlug($this->firstName, $this->lastName);
         return $this;
     }
 }

@@ -42,6 +42,11 @@ class PersonnageService
         }
 
         $personnage = $this->hydrate($data);
+        
+        // Generate unique slug
+        $baseSlug = $personnage->generateSlug()->getSlug();
+        $uniqueSlug = $this->personnageRepository->findUniqueSlug($baseSlug, $personnage->getId());
+        $personnage->setSlug($uniqueSlug);
 
         $this->em->persist($personnage);
         $this->em->flush();
@@ -180,5 +185,65 @@ class PersonnageService
         $this->em->flush();
 
         return true;
+    }
+
+    /**
+     * Get detailed information about a personnage including stats
+     */
+    public function getPersonnageDetails(int $personnageId): ?array
+    {
+        $personnage = $this->personnageRepository->find($personnageId);
+        if (!$personnage) {
+            return null;
+        }
+
+        // Get sequence appearances count
+        $sequenceCount = $this->sequencePersonnageRepository->createQueryBuilder('sp')
+            ->select('COUNT(sp.id)')
+            ->where('sp.personnage = :personnage')
+            ->setParameter('personnage', $personnage)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        // Get project info
+        $project = $personnage->getProject();
+
+        // Build response
+        return [
+            'id' => $personnage->getId(),
+            'firstName' => $personnage->getFirstName(),
+            'lastName' => $personnage->getLastName(),
+            'slug' => $personnage->getSlug(),
+            'age' => $personnage->getAge(),
+            'level' => $personnage->getLevel(),
+            'background' => $personnage->getBackground(),
+            'strength' => $personnage->getStrength(),
+            'weakness' => $personnage->getWeakness(),
+            'analysis' => $personnage->getAnalysis(),
+            'images' => $personnage->getImagesArray(),
+            'avatar' => $personnage->getImagesArray()[0] ?? null,
+            'project' => [
+                'id' => $project?->getId(),
+                'name' => $project?->getName(),
+                'slug' => $project?->getSlug(),
+            ],
+            'stats' => [
+                'sequenceCount' => (int) $sequenceCount,
+                'imageCount' => count($personnage->getImagesArray()),
+            ]
+        ];
+    }
+
+    /**
+     * Get detailed information about a personnage by slug including stats
+     */
+    public function getPersonnageDetailsBySlug(string $slug): ?array
+    {
+        $personnage = $this->personnageRepository->findBySlug($slug);
+        if (!$personnage) {
+            return null;
+        }
+
+        return $this->getPersonnageDetails($personnage->getId());
     }
 }
