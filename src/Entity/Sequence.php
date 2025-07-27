@@ -35,9 +35,9 @@ class Sequence
     #[Groups(['sequence:read', 'sequence:write', 'part:read'])]
     private int $position;
 
-    #[ORM\Column(type: 'string', length: 255)]
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
     #[Groups(['sequence:read', 'sequence:write', 'part:read'])]
-    private string $information;
+    private ?string $information = null;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     #[Groups(['sequence:read', 'sequence:write', 'part:read'])]
@@ -48,6 +48,7 @@ class Sequence
     private ?string $aesthetic_idea = null;
 
     #[ORM\ManyToOne(targetEntity: Part::class, inversedBy: 'sequences')]
+    #[ORM\JoinColumn(nullable: false)]
     #[Groups(['sequence:read', 'sequence:write'])] // pas dans part:read, pour éviter la boucle
     private Part $part;
 
@@ -165,12 +166,12 @@ class Sequence
         return $this->sequencePersonnages;
     }
 
-    public function getInformation(): string
+    public function getInformation(): ?string
     {
         return $this->information;
     }
 
-    public function setInformation(string $information): void
+    public function setInformation(?string $information): void
     {
         $this->information = $information;
     }

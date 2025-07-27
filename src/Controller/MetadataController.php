@@ -5,6 +5,9 @@ namespace App\Controller;
 use App\Repository\CriteriaRepository;
 use App\Repository\StatusRepository;
 use App\Repository\TypeRepository;
+use App\Repository\NarrativeArcRepository;
+use App\Repository\DramaticFunctionRepository;
+use App\Provider\ActantialSchemaProvider;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -18,6 +21,9 @@ class MetadataController extends AbstractController
         CriteriaRepository $criteriaRepository,
         StatusRepository $statusRepository,
         TypeRepository $typeRepository,
+        NarrativeArcRepository $narrativeArcRepository,
+        DramaticFunctionRepository $dramaticFunctionRepository,
+        ActantialSchemaProvider $actantialSchemaProvider,
         CacheInterface $cache
     ): JsonResponse
     {
@@ -31,16 +37,28 @@ class MetadataController extends AbstractController
         $types = $cache->get('types', function() use ($typeRepository) {
             return $typeRepository->findAll();
         });
+        $narrativeArcs = $cache->get('narrative_arcs', function() use ($narrativeArcRepository) {
+            return $narrativeArcRepository->findAll();
+        });
+        $dramaticFunctions = $cache->get('dramatic_functions', function() use ($dramaticFunctionRepository) {
+            return $dramaticFunctionRepository->findAll();
+        });
+        
+        // Récupérer le schéma actantiel via le provider
+        $actantialSchema = iterator_to_array($actantialSchemaProvider->provide(new \ApiPlatform\Metadata\GetCollection(), [], []));
 
        return $this->json(
            [
                'criterias' => $criterias,
                'status' =>$status,
                'types' => $types,
+               'narrativeArcs' => $narrativeArcs,
+               'dramaticFunctions' => $dramaticFunctions,
+               'actantialSchema' => $actantialSchema,
            ],
            200,
            [],
-           ['groups' => 'metadata_read']
+           ['groups' => ['metadata_read', 'narrative_arc:read', 'dramatic_function:read']]
        );
     }
 }
