@@ -34,9 +34,14 @@ class NarrativeStructure
     #[Groups(['narrative_structure:read'])]
     private Collection $narrativeStructureEvents;
 
+    #[ORM\OneToMany(mappedBy: 'narrativeStructure', targetEntity: SubgenreNarrativeStructure::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[Groups(['narrative_structure:read'])]
+    private Collection $subgenreNarrativeStructures;
+
     public function __construct()
     {
         $this->narrativeStructureEvents = new ArrayCollection();
+        $this->subgenreNarrativeStructures = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -99,6 +104,33 @@ class NarrativeStructure
         if ($this->narrativeStructureEvents->removeElement($narrativeStructureEvent)) {
             if ($narrativeStructureEvent->getNarrativeStructure() === $this) {
                 $narrativeStructureEvent->setNarrativeStructure(null);
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, SubgenreNarrativeStructure>
+     */
+    public function getSubgenreNarrativeStructures(): Collection
+    {
+        return $this->subgenreNarrativeStructures;
+    }
+
+    public function addSubgenreNarrativeStructure(SubgenreNarrativeStructure $subgenreNarrativeStructure): self
+    {
+        if (!$this->subgenreNarrativeStructures->contains($subgenreNarrativeStructure)) {
+            $this->subgenreNarrativeStructures->add($subgenreNarrativeStructure);
+            $subgenreNarrativeStructure->setNarrativeStructure($this);
+        }
+        return $this;
+    }
+
+    public function removeSubgenreNarrativeStructure(SubgenreNarrativeStructure $subgenreNarrativeStructure): self
+    {
+        if ($this->subgenreNarrativeStructures->removeElement($subgenreNarrativeStructure)) {
+            if ($subgenreNarrativeStructure->getNarrativeStructure() === $this) {
+                $subgenreNarrativeStructure->setNarrativeStructure(null);
             }
         }
         return $this;

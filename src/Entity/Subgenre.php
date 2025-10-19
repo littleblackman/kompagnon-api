@@ -28,21 +28,26 @@ class Subgenre
 
     #[ORM\ManyToOne(targetEntity: Genre::class, inversedBy: 'subgenres')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
-    #[Groups(['subgenre:read'])]
+    // Pas de Groups ici pour éviter la référence circulaire Genre → Subgenre → Genre
     private ?Genre $genre = null;
 
     #[ORM\ManyToMany(targetEntity: Event::class, mappedBy: 'subgenres')]
-    #[Groups(['subgenre:read'])]
+    // Pas de Groups ici pour éviter la référence circulaire
     private Collection $events;
 
     #[ORM\OneToMany(mappedBy: 'subgenre', targetEntity: SubgenreDramaticFunction::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
-    #[Groups(['subgenre:read'])]
+    // Pas de Groups ici pour éviter surcharge dans metadata
     private Collection $subgenreDramaticFunctions;
+
+    #[ORM\OneToMany(mappedBy: 'subgenre', targetEntity: SubgenreNarrativeStructure::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    // Pas de Groups ici pour éviter surcharge dans metadata
+    private Collection $subgenreNarrativeStructures;
 
     public function __construct()
     {
         $this->events = new ArrayCollection();
         $this->subgenreDramaticFunctions = new ArrayCollection();
+        $this->subgenreNarrativeStructures = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -130,6 +135,33 @@ class Subgenre
         if ($this->subgenreDramaticFunctions->removeElement($subgenreDramaticFunction)) {
             if ($subgenreDramaticFunction->getSubgenre() === $this) {
                 $subgenreDramaticFunction->setSubgenre(null);
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, SubgenreNarrativeStructure>
+     */
+    public function getSubgenreNarrativeStructures(): Collection
+    {
+        return $this->subgenreNarrativeStructures;
+    }
+
+    public function addSubgenreNarrativeStructure(SubgenreNarrativeStructure $subgenreNarrativeStructure): self
+    {
+        if (!$this->subgenreNarrativeStructures->contains($subgenreNarrativeStructure)) {
+            $this->subgenreNarrativeStructures->add($subgenreNarrativeStructure);
+            $subgenreNarrativeStructure->setSubgenre($this);
+        }
+        return $this;
+    }
+
+    public function removeSubgenreNarrativeStructure(SubgenreNarrativeStructure $subgenreNarrativeStructure): self
+    {
+        if ($this->subgenreNarrativeStructures->removeElement($subgenreNarrativeStructure)) {
+            if ($subgenreNarrativeStructure->getSubgenre() === $this) {
+                $subgenreNarrativeStructure->setSubgenre(null);
             }
         }
         return $this;

@@ -7,6 +7,10 @@ use App\Repository\StatusRepository;
 use App\Repository\TypeRepository;
 use App\Repository\NarrativeArcRepository;
 use App\Repository\DramaticFunctionRepository;
+use App\Repository\GenreRepository;
+use App\Repository\SubgenreRepository;
+use App\Repository\EventRepository;
+use App\Repository\NarrativeStructureRepository;
 use App\Provider\ActantialSchemaProvider;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;
@@ -23,6 +27,10 @@ class MetadataController extends AbstractController
         TypeRepository $typeRepository,
         NarrativeArcRepository $narrativeArcRepository,
         DramaticFunctionRepository $dramaticFunctionRepository,
+        GenreRepository $genreRepository,
+        SubgenreRepository $subgenreRepository,
+        EventRepository $eventRepository,
+        NarrativeStructureRepository $narrativeStructureRepository,
         ActantialSchemaProvider $actantialSchemaProvider,
         CacheInterface $cache
     ): JsonResponse
@@ -43,7 +51,24 @@ class MetadataController extends AbstractController
         $dramaticFunctions = $cache->get('dramatic_functions', function() use ($dramaticFunctionRepository) {
             return $dramaticFunctionRepository->findAll();
         });
-        
+
+        // Nouveaux: Workflow data - SANS CACHE pour debug
+        $allGenres = $genreRepository->findAll();
+        // Forcer le chargement des subgenres pour chaque genre
+        foreach ($allGenres as $genre) {
+            $genre->getSubgenres()->count(); // Force lazy loading
+        }
+        $genres = $allGenres;
+        $subgenres = $cache->get('subgenres', function() use ($subgenreRepository) {
+            return $subgenreRepository->findAll();
+        });
+        $events = $cache->get('events', function() use ($eventRepository) {
+            return $eventRepository->findAll();
+        });
+        $narrativeStructures = $cache->get('narrative_structures', function() use ($narrativeStructureRepository) {
+            return $narrativeStructureRepository->findAll();
+        });
+
         // Récupérer le schéma actantiel via le provider
         $actantialSchema = iterator_to_array($actantialSchemaProvider->provide(new \ApiPlatform\Metadata\GetCollection(), [], []));
 
@@ -55,10 +80,14 @@ class MetadataController extends AbstractController
                'narrativeArcs' => $narrativeArcs,
                'dramaticFunctions' => $dramaticFunctions,
                'actantialSchema' => $actantialSchema,
+               'genres' => $genres,
+               'subgenres' => $subgenres,
+               'events' => $events,
+               'narrativeStructures' => $narrativeStructures,
            ],
            200,
            [],
-           ['groups' => ['metadata_read', 'narrative_arc:read', 'dramatic_function:read']]
+           ['groups' => ['metadata_read', 'narrative_arc:read', 'dramatic_function:read', 'genre:read', 'subgenre:read', 'event:read', 'narrative_structure:read']]
        );
     }
 }
