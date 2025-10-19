@@ -10,9 +10,73 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class UserController extends AbstractController
 {
+    #[Route('/api/register', name: 'api_user_register', methods: ['POST'])]
+    public function register(
+        Request $request,
+        EntityManagerInterface $entityManager,
+        UserPasswordHasherInterface $passwordHasher,
+        ValidatorInterface $validator
+    ): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+
+        if ($data === null) {
+            return $this->json(['error' => 'Données JSON invalides'], 400);
+        }
+
+        // Validation des champs requis
+        if (!isset($data['email']) || !isset($data['password'])) {
+            return $this->json(['error' => 'Email et mot de passe requis'], 400);
+        }
+
+        // Vérifier si l'email existe déjà
+        $existingUser = $entityManager->getRepository(User::class)->findOneBy(['email' => $data['email']]);
+        if ($existingUser) {
+            return $this->json(['error' => 'Cet email est déjà utilisé'], 409);
+        }
+
+        // Créer le nouvel utilisateur
+        $user = new User();
+        $user->setEmail($data['email']);
+
+        // Hasher le mot de passe
+        $hashedPassword = $passwordHasher->hashPassword($user, $data['password']);
+        $user->setPassword($hashedPassword);
+
+        // Définir la date de création
+        $user->setCreatedAt(new \DateTimeImmutable());
+
+        // Valider l'entité
+        $errors = $validator->validate($user);
+        if (count($errors) > 0) {
+            $errorMessages = [];
+            foreach ($errors as $error) {
+                $errorMessages[] = $error->getMessage();
+            }
+            return $this->json(['error' => 'Validation échouée', 'details' => $errorMessages], 400);
+        }
+
+        try {
+            $entityManager->persist($user);
+            $entityManager->flush();
+
+            return $this->json([
+                'message' => 'Compte créé avec succès',
+                'user' => [
+                    'id' => $user->getId(),
+                    'email' => $user->getEmail(),
+                ]
+            ], 201);
+        } catch (\Exception $e) {
+            return $this->json(['error' => 'Erreur lors de la création du compte'], 500);
+        }
+    }
+
     #[Route('/api/user/profile', name: 'api_user_profile_update', methods: ['POST', 'PUT'])]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function updateProfile(Request $request, EntityManagerInterface $entityManager): JsonResponse

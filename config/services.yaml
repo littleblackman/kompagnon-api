@@ -28,5 +28,13 @@ services:
             - { name: doctrine.event_listener, event: prePersist }
             - { name: doctrine.event_listener, event: preUpdate }
 
+    App\EventListener\UserFilterListener:
+        tags:
+            - { name: kernel.event_listener, event: kernel.request, priority: 10 }
+
     App\Provider\ActantialSchemaProvider:
         tags: ['api_platform.state_provider']
+
+    # Force MySQL80Platform instead of auto-detected MariaDB
+    Doctrine\DBAL\Platforms\MySQL80Platform:
+        class: Doctrine\DBAL\Platforms\MySQL80Platform

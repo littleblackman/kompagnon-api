@@ -5,6 +5,8 @@ namespace App\Entity;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
@@ -41,6 +43,14 @@ class NarrativeArc
     #[ORM\Column(type: 'string', length: 20)]
     #[Groups(['narrative_arc:read'])]
     private string $tendency = 'ambiguous';
+
+    #[ORM\ManyToMany(targetEntity: DramaticFunction::class, mappedBy: 'narrativeArcs')]
+    private Collection $dramaticFunctions;
+
+    public function __construct()
+    {
+        $this->dramaticFunctions = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -103,6 +113,31 @@ class NarrativeArc
             throw new \InvalidArgumentException('Tendency must be positive, negative or ambiguous');
         }
         $this->tendency = $tendency;
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, DramaticFunction>
+     */
+    public function getDramaticFunctions(): Collection
+    {
+        return $this->dramaticFunctions;
+    }
+
+    public function addDramaticFunction(DramaticFunction $dramaticFunction): self
+    {
+        if (!$this->dramaticFunctions->contains($dramaticFunction)) {
+            $this->dramaticFunctions->add($dramaticFunction);
+            $dramaticFunction->addNarrativeArc($this);
+        }
+        return $this;
+    }
+
+    public function removeDramaticFunction(DramaticFunction $dramaticFunction): self
+    {
+        if ($this->dramaticFunctions->removeElement($dramaticFunction)) {
+            $dramaticFunction->removeNarrativeArc($this);
+        }
         return $this;
     }
 }

@@ -54,20 +54,40 @@ class ProjectService
 
     public function getProjectBySlug(string $slug): ?Project
     {
-        return $this->projectRepository->findOneBy(['slug' => $slug]);
+        $user = $this->security->getUser();
+        if (!$user) {
+            throw new \Exception('User not authenticated');
+        }
+
+        return $this->projectRepository->findOneBy([
+            'slug' => $slug,
+            'user' => $user
+        ]);
     }
 
     public function createOrUpdate(?array $data): ?Project
     {
         $em = $this->entityManager;
+        $user = $this->security->getUser();
+
+        if (!$user) {
+            throw new \Exception('User not authenticated');
+        }
 
         if(isset($data['id']))  {
-            $project = $this->projectRepository->find($data['id']);
+            $project = $this->projectRepository->findOneBy([
+                'id' => $data['id'],
+                'user' => $user
+            ]);
+
+            if (!$project) {
+                throw new \Exception('Project not found or access denied');
+            }
         } else {
             $project = new Project();
             $slug = $this->generateUniqueSlug($data['name'] ?? 'new-project');
             $project->setSlug($slug);
-            $project->setUser($this->security->getUser());
+            $project->setUser($user);
         }
 
         $project->setName($data['name']);
@@ -95,9 +115,18 @@ class ProjectService
 
     public function delete(int $id): void
     {
-        $project = $this->projectRepository->find($id);
+        $user = $this->security->getUser();
+        if (!$user) {
+            throw new \Exception('User not authenticated');
+        }
+
+        $project = $this->projectRepository->findOneBy([
+            'id' => $id,
+            'user' => $user
+        ]);
+
         if (!$project) {
-            throw new \Exception('Project not found');
+            throw new \Exception('Project not found or access denied');
         }
 
         $this->entityManager->remove($project);

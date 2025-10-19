@@ -5,6 +5,8 @@ namespace App\Entity;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
@@ -37,6 +39,19 @@ class DramaticFunction
     #[ORM\Column(type: 'string', length: 20)]
     #[Groups(['dramatic_function:read'])]
     private string $tendency = 'ambiguous';
+
+    #[ORM\OneToMany(mappedBy: 'dramaticFunction', targetEntity: SubgenreDramaticFunction::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    private Collection $subgenreDramaticFunctions;
+
+    #[ORM\ManyToMany(targetEntity: NarrativeArc::class, inversedBy: 'dramaticFunctions')]
+    #[ORM\JoinTable(name: 'dramatic_function_narrative_arc')]
+    private Collection $narrativeArcs;
+
+    public function __construct()
+    {
+        $this->subgenreDramaticFunctions = new ArrayCollection();
+        $this->narrativeArcs = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -88,6 +103,55 @@ class DramaticFunction
             throw new \InvalidArgumentException('Tendency must be positive, negative or ambiguous');
         }
         $this->tendency = $tendency;
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, SubgenreDramaticFunction>
+     */
+    public function getSubgenreDramaticFunctions(): Collection
+    {
+        return $this->subgenreDramaticFunctions;
+    }
+
+    public function addSubgenreDramaticFunction(SubgenreDramaticFunction $subgenreDramaticFunction): self
+    {
+        if (!$this->subgenreDramaticFunctions->contains($subgenreDramaticFunction)) {
+            $this->subgenreDramaticFunctions->add($subgenreDramaticFunction);
+            $subgenreDramaticFunction->setDramaticFunction($this);
+        }
+        return $this;
+    }
+
+    public function removeSubgenreDramaticFunction(SubgenreDramaticFunction $subgenreDramaticFunction): self
+    {
+        if ($this->subgenreDramaticFunctions->removeElement($subgenreDramaticFunction)) {
+            if ($subgenreDramaticFunction->getDramaticFunction() === $this) {
+                $subgenreDramaticFunction->setDramaticFunction(null);
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, NarrativeArc>
+     */
+    public function getNarrativeArcs(): Collection
+    {
+        return $this->narrativeArcs;
+    }
+
+    public function addNarrativeArc(NarrativeArc $narrativeArc): self
+    {
+        if (!$this->narrativeArcs->contains($narrativeArc)) {
+            $this->narrativeArcs->add($narrativeArc);
+        }
+        return $this;
+    }
+
+    public function removeNarrativeArc(NarrativeArc $narrativeArc): self
+    {
+        $this->narrativeArcs->removeElement($narrativeArc);
         return $this;
     }
 }
