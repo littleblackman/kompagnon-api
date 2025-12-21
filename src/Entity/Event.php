@@ -33,11 +33,10 @@ class Event
 
     #[ORM\ManyToMany(targetEntity: Subgenre::class, inversedBy: 'events')]
     #[ORM\JoinTable(name: 'subgenre_event')]
-    #[Groups(['event:read', 'event:write'])]
+    #[Groups(['event:write'])]
     private Collection $subgenres;
 
     #[ORM\OneToMany(mappedBy: 'event', targetEntity: NarrativeStructureEvent::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
-    #[Groups(['event:read'])]
     private Collection $narrativeStructureEvents;
 
     public function __construct()

@@ -8,5 +8,8 @@ lexik_jwt_authentication:
     token_extractors:
         authorization_header:
             enabled: true
-            prefix: Bearer
-            name: Authorization
+            prefix: ''
+            name: X-AUTH-TOKEN
+        query_parameter:
+            enabled: true
+            name: bearer

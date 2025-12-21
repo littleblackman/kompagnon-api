@@ -56,6 +56,22 @@ class SubgenreController extends AbstractController
         // Structures narratives recommandées
         $narrativeStructures = array_map(function($sns) {
             $structure = $sns->getNarrativeStructure();
+
+            // Récupérer les events de cette structure, triés par position
+            $events = array_map(function($nse) {
+                $event = $nse->getEvent();
+                return [
+                    'id' => $event->getId(),
+                    'name' => $event->getName(),
+                    'description' => $event->getDescription(),
+                    'position' => $nse->getPosition(),
+                    'isOptional' => $nse->isOptional(),
+                ];
+            }, $structure->getNarrativeStructureEvents()->toArray());
+
+            // Trier les events par position
+            usort($events, fn($a, $b) => $a['position'] <=> $b['position']);
+
             return [
                 'id' => $structure->getId(),
                 'name' => $structure->getName(),
@@ -63,6 +79,7 @@ class SubgenreController extends AbstractController
                 'totalBeats' => $structure->getTotalBeats(),
                 'recommendedPercentage' => $sns->getRecommendedPercentage(),
                 'isDefault' => $sns->isDefault(),
+                'events' => $events,
             ];
         }, $subgenre->getSubgenreNarrativeStructures()->toArray());
 

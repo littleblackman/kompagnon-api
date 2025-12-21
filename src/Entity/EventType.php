@@ -27,7 +27,6 @@ class EventType
     private ?string $description = null;
 
     #[ORM\OneToMany(mappedBy: 'eventType', targetEntity: Event::class)]
-    #[Groups(['event_type:read'])]
     private Collection $events;
 
     public function __construct()
