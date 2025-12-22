@@ -1,5 +1,13 @@
 /.idea/
 
+# Environnements (NE JAMAIS VERSIONNER)
+.env
+.env.*
+!.env.example
+
+# Apache / prod
+/public/.htaccess
+
 ###> symfony/framework-bundle ###
 /.env.local
 /.env.local.php
