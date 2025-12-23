@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'personnage_dramatic_function')]
@@ -12,12 +13,13 @@ class PersonnageDramaticFunction
     #[ORM\Id, ORM\GeneratedValue, ORM\Column(type: 'integer')]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(targetEntity: Personnage::class)]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\ManyToOne(targetEntity: Personnage::class, inversedBy: 'personnageDramaticFunctions')]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private Personnage $personnage;
 
     #[ORM\ManyToOne(targetEntity: DramaticFunction::class)]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+    #[Groups(["personnage:read", "project:read"])]
     private DramaticFunction $dramaticFunction;
 
     #[ORM\ManyToOne(targetEntity: Sequence::class)]
@@ -30,6 +32,7 @@ class PersonnageDramaticFunction
 
     #[ORM\Column(type: 'integer')]
     #[Assert\Range(min: 0, max: 100)]
+    #[Groups(["personnage:read", "project:read"])]
     private int $weight = 50;
 
     #[ORM\Column(type: 'text', nullable: true)]

@@ -3,10 +3,13 @@
 namespace App\Service;
 
 use App\Entity\Project;
+use App\Entity\Personnage;
+use App\Entity\PersonnageDramaticFunction;
 use App\Repository\PartRepository;
 use App\Repository\TypeRepository;
 use App\Repository\ProjectRepository;
 use App\Repository\SequenceRepository;
+use App\Repository\DramaticFunctionRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\String\Slugger\SluggerInterface;
@@ -18,6 +21,7 @@ class ProjectService
     private PartRepository $partRepository;
     private SequenceRepository $sequenceRepository;
     private TypeRepository $typeRepository;
+    private DramaticFunctionRepository $dramaticFunctionRepository;
     private EntityManagerInterface $entityManager;
     private SluggerInterface $slugger;
     private Security $security;
@@ -27,6 +31,7 @@ class ProjectService
         PartRepository $partRepository,
         SequenceRepository $sequenceRepository,
         TypeRepository $typeRepository,
+        DramaticFunctionRepository $dramaticFunctionRepository,
         EntityManagerInterface $entityManager,
         SluggerInterface $slugger,
         Security $security
@@ -36,6 +41,7 @@ class ProjectService
         $this->partRepository = $partRepository;
         $this->sequenceRepository = $sequenceRepository;
         $this->typeRepository = $typeRepository;
+        $this->dramaticFunctionRepository = $dramaticFunctionRepository;
         $this->entityManager = $entityManager;
         $this->slugger = $slugger;
         $this->security = $security;
@@ -106,9 +112,44 @@ class ProjectService
                 $project->setType($type);
             }
         }
-        
+
         $em->persist($project);
         $em->flush();
+
+        // Créer les personnages avec leurs dramatic functions si fournis
+        if (isset($data['characters']) && is_array($data['characters']) && !isset($data['id'])) {
+            foreach ($data['characters'] as $characterData) {
+                if (empty($characterData['name']) || empty($characterData['dramaticFunctionId'])) {
+                    continue;
+                }
+
+                // Créer le personnage
+                $personnage = new Personnage();
+                $personnage->setFirstName($characterData['name']);
+                $personnage->setLastName(''); // Par défaut vide
+                $personnage->setProject($project);
+                $personnage->generateSlug();
+
+                // Récupérer la dramatic function
+                $dramaticFunction = $this->dramaticFunctionRepository->find($characterData['dramaticFunctionId']);
+                if (!$dramaticFunction) {
+                    continue;
+                }
+
+                // Créer la liaison personnage-dramatic_function
+                $pdf = new PersonnageDramaticFunction();
+                $pdf->setPersonnage($personnage);
+                $pdf->setDramaticFunction($dramaticFunction);
+                $pdf->setWeight(100); // Poids par défaut
+
+                $personnage->addPersonnageDramaticFunction($pdf);
+
+                $em->persist($personnage);
+                $em->persist($pdf);
+            }
+
+            $em->flush();
+        }
 
         return $project;
     }

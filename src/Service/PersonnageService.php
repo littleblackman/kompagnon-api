@@ -3,9 +3,11 @@
 namespace App\Service;
 
 use App\Entity\Personnage;
+use App\Entity\PersonnageDramaticFunction;
 use App\Entity\SequencePersonnage;
 use App\Repository\ProjectRepository;
 use App\Repository\PersonnageRepository;
+use App\Repository\DramaticFunctionRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Repository\SequencePersonnageRepository;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -14,18 +16,21 @@ class PersonnageService
 {
     private ProjectRepository $projectRepository;
     private PersonnageRepository $personnageRepository;
+    private DramaticFunctionRepository $dramaticFunctionRepository;
     private EntityManagerInterface $em;
     private SequencePersonnageRepository $sequencePersonnageRepository;
 
     public function __construct(
         ProjectRepository $projectRepository,
         PersonnageRepository $personnageRepository,
+        DramaticFunctionRepository $dramaticFunctionRepository,
         EntityManagerInterface $em,
         SequencePersonnageRepository $sequencePersonnageRepository
     )
     {
         $this->projectRepository = $projectRepository;
         $this->personnageRepository = $personnageRepository;
+        $this->dramaticFunctionRepository = $dramaticFunctionRepository;
         $this->em = $em;
         $this->sequencePersonnageRepository = $sequencePersonnageRepository;
     }
@@ -42,7 +47,7 @@ class PersonnageService
         }
 
         $personnage = $this->hydrate($data);
-        
+
         // Generate unique slug
         $baseSlug = $personnage->generateSlug()->getSlug();
         $uniqueSlug = $this->personnageRepository->findUniqueSlug($baseSlug, $personnage->getId());
@@ -50,6 +55,30 @@ class PersonnageService
 
         $this->em->persist($personnage);
         $this->em->flush();
+
+        // Gérer les dramatic functions
+        if (isset($data['dramaticFunctionIds']) && is_array($data['dramaticFunctionIds'])) {
+            // Supprimer les anciennes relations
+            foreach ($personnage->getPersonnageDramaticFunctions() as $pdf) {
+                $this->em->remove($pdf);
+            }
+            $this->em->flush();
+
+            // Créer les nouvelles relations
+            foreach ($data['dramaticFunctionIds'] as $functionId) {
+                $dramaticFunction = $this->dramaticFunctionRepository->find($functionId);
+                if ($dramaticFunction) {
+                    $pdf = new PersonnageDramaticFunction();
+                    $pdf->setPersonnage($personnage);
+                    $pdf->setDramaticFunction($dramaticFunction);
+                    $pdf->setWeight(100); // Poids par défaut
+
+                    $personnage->addPersonnageDramaticFunction($pdf);
+                    $this->em->persist($pdf);
+                }
+            }
+            $this->em->flush();
+        }
 
 
         // is sequenceId is set, create or update the link with SequencePersonnage

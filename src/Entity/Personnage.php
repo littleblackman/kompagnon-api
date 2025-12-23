@@ -78,9 +78,14 @@ class Personnage
     #[MaxDepth(1)]
     private Collection $sequencePersonnages;
 
+    #[ORM\OneToMany(targetEntity: PersonnageDramaticFunction::class, mappedBy: 'personnage', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[Groups(["personnage:read", "project:read"])]
+    private Collection $personnageDramaticFunctions;
+
     public function __construct()
     {
         $this->sequencePersonnages = new ArrayCollection();
+        $this->personnageDramaticFunctions = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -301,6 +306,31 @@ class Personnage
     public function generateSlug(): self
     {
         $this->slug = SlugUtils::createPersonnageSlug($this->firstName, $this->lastName);
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PersonnageDramaticFunction>
+     */
+    public function getPersonnageDramaticFunctions(): Collection
+    {
+        return $this->personnageDramaticFunctions;
+    }
+
+    public function addPersonnageDramaticFunction(PersonnageDramaticFunction $personnageDramaticFunction): self
+    {
+        if (!$this->personnageDramaticFunctions->contains($personnageDramaticFunction)) {
+            $this->personnageDramaticFunctions->add($personnageDramaticFunction);
+            $personnageDramaticFunction->setPersonnage($this);
+        }
+
+        return $this;
+    }
+
+    public function removePersonnageDramaticFunction(PersonnageDramaticFunction $personnageDramaticFunction): self
+    {
+        $this->personnageDramaticFunctions->removeElement($personnageDramaticFunction);
+
         return $this;
     }
 }
