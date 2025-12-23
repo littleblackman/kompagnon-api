@@ -237,6 +237,23 @@ class PersonnageService
         // Get project info
         $project = $personnage->getProject();
 
+        // Build dramatic functions array
+        $dramaticFunctions = [];
+        foreach ($personnage->getPersonnageDramaticFunctions() as $pdf) {
+            $dramaticFunctions[] = [
+                'id' => $pdf->getId(),
+                'dramaticFunction' => [
+                    'id' => $pdf->getDramaticFunction()->getId(),
+                    'name' => $pdf->getDramaticFunction()->getName(),
+                    'description' => $pdf->getDramaticFunction()->getDescription(),
+                    'characteristics' => $pdf->getDramaticFunction()->getCharacteristics(),
+                    'tendency' => $pdf->getDramaticFunction()->getTendency(),
+                ],
+                'weight' => $pdf->getWeight(),
+                'comment' => $pdf->getComment(),
+            ];
+        }
+
         // Build response
         return [
             'id' => $personnage->getId(),
@@ -251,6 +268,7 @@ class PersonnageService
             'analysis' => $personnage->getAnalysis(),
             'images' => $personnage->getImagesArray(),
             'avatar' => $personnage->getImagesArray()[0] ?? null,
+            'personnageDramaticFunctions' => $dramaticFunctions,
             'project' => [
                 'id' => $project?->getId(),
                 'name' => $project?->getName(),

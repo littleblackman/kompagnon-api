@@ -21,23 +21,23 @@ use Symfony\Component\Serializer\Annotation\Groups;
 class DramaticFunction
 {
     #[ORM\Id, ORM\GeneratedValue, ORM\Column(type: 'integer')]
-    #[Groups(['dramatic_function:read'])]
+    #[Groups(['dramatic_function:read', 'personnage:read', 'project:read'])]
     private ?int $id = null;
 
     #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['dramatic_function:read'])]
+    #[Groups(['dramatic_function:read', 'personnage:read', 'project:read'])]
     private string $name;
 
     #[ORM\Column(type: 'text', nullable: true)]
-    #[Groups(['dramatic_function:read'])]
+    #[Groups(['dramatic_function:read', 'personnage:read', 'project:read'])]
     private ?string $description = null;
 
     #[ORM\Column(type: 'json')]
-    #[Groups(['dramatic_function:read'])]
+    #[Groups(['dramatic_function:read', 'personnage:read', 'project:read'])]
     private array $characteristics = [];
 
     #[ORM\Column(type: 'string', length: 20)]
-    #[Groups(['dramatic_function:read'])]
+    #[Groups(['dramatic_function:read', 'personnage:read', 'project:read'])]
     private string $tendency = 'ambiguous';
 
     #[ORM\OneToMany(mappedBy: 'dramaticFunction', targetEntity: SubgenreDramaticFunction::class, cascade: ['persist', 'remove'], orphanRemoval: true)]

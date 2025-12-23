@@ -32,7 +32,7 @@ class ProjectController extends AbstractController
             }
 
             return $this->json($project, 200, [], [
-                'groups' => ['project:read', 'part:read', 'sequence:read', 'scene:read'],
+                'groups' => ['project:read', 'part:read', 'sequence:read', 'scene:read', 'personnage:read'],
             ]);
         } catch (\Exception $e) {
             return $this->json(['error' => $e->getMessage()], 500);

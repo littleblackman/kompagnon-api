@@ -11,6 +11,7 @@ use Symfony\Component\Serializer\Attribute\Groups;
 class PersonnageDramaticFunction
 {
     #[ORM\Id, ORM\GeneratedValue, ORM\Column(type: 'integer')]
+    #[Groups(["personnage:read", "project:read"])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: Personnage::class, inversedBy: 'personnageDramaticFunctions')]
