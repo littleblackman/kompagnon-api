@@ -40,6 +40,10 @@ class Project
     private ?string $description = null;
 
     #[Groups(['project:read', 'project:write'])]
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $referenceNarrativeComponents = null;
+
+    #[Groups(['project:read', 'project:write'])]
     #[ORM\ManyToOne(targetEntity: Type::class)]
     private Type $type;
 
@@ -95,6 +99,16 @@ class Project
     public function setDescription(?string $description): void
     {
         $this->description = $description;
+    }
+
+    public function getReferenceNarrativeComponents(): ?array
+    {
+        return $this->referenceNarrativeComponents;
+    }
+
+    public function setReferenceNarrativeComponents(?array $referenceNarrativeComponents): void
+    {
+        $this->referenceNarrativeComponents = $referenceNarrativeComponents;
     }
 
     public function getType(): Type

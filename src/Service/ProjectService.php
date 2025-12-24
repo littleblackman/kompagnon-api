@@ -3,12 +3,15 @@
 namespace App\Service;
 
 use App\Entity\Project;
+use App\Entity\Part;
+use App\Entity\Sequence;
 use App\Entity\Personnage;
 use App\Entity\PersonnageDramaticFunction;
 use App\Repository\PartRepository;
 use App\Repository\TypeRepository;
 use App\Repository\ProjectRepository;
 use App\Repository\SequenceRepository;
+use App\Repository\StatusRepository;
 use App\Repository\DramaticFunctionRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -21,6 +24,7 @@ class ProjectService
     private PartRepository $partRepository;
     private SequenceRepository $sequenceRepository;
     private TypeRepository $typeRepository;
+    private StatusRepository $statusRepository;
     private DramaticFunctionRepository $dramaticFunctionRepository;
     private EntityManagerInterface $entityManager;
     private SluggerInterface $slugger;
@@ -31,6 +35,7 @@ class ProjectService
         PartRepository $partRepository,
         SequenceRepository $sequenceRepository,
         TypeRepository $typeRepository,
+        StatusRepository $statusRepository,
         DramaticFunctionRepository $dramaticFunctionRepository,
         EntityManagerInterface $entityManager,
         SluggerInterface $slugger,
@@ -41,6 +46,7 @@ class ProjectService
         $this->partRepository = $partRepository;
         $this->sequenceRepository = $sequenceRepository;
         $this->typeRepository = $typeRepository;
+        $this->statusRepository = $statusRepository;
         $this->dramaticFunctionRepository = $dramaticFunctionRepository;
         $this->entityManager = $entityManager;
         $this->slugger = $slugger;
@@ -98,7 +104,24 @@ class ProjectService
 
         $project->setName($data['name']);
         $project->setDescription($data['description']);
-        
+
+        // Store reference narrative components if provided (creation or update)
+        if (isset($data['genre_id']) || isset($data['subgenre_id']) || isset($data['narrative_structure_id'])) {
+            $referenceComponents = $project->getReferenceNarrativeComponents() ?? [];
+
+            if (isset($data['genre_id'])) {
+                $referenceComponents['genre_id'] = $data['genre_id'];
+            }
+            if (isset($data['subgenre_id'])) {
+                $referenceComponents['subgenre_id'] = $data['subgenre_id'];
+            }
+            if (isset($data['narrative_structure_id'])) {
+                $referenceComponents['narrative_structure_id'] = $data['narrative_structure_id'];
+            }
+
+            $project->setReferenceNarrativeComponents($referenceComponents);
+        }
+
         // Handle type if provided
         if (isset($data['type_id'])) {
             $type = $this->typeRepository->find($data['type_id']);
@@ -118,6 +141,7 @@ class ProjectService
 
         // Créer les personnages avec leurs dramatic functions si fournis
         if (isset($data['characters']) && is_array($data['characters']) && !isset($data['id'])) {
+            $characterIndex = 1;
             foreach ($data['characters'] as $characterData) {
                 if (empty($characterData['name']) || empty($characterData['dramaticFunctionId'])) {
                     continue;
@@ -128,7 +152,10 @@ class ProjectService
                 $personnage->setFirstName($characterData['name']);
                 $personnage->setLastName(''); // Par défaut vide
                 $personnage->setProject($project);
-                $personnage->generateSlug();
+                // Générer un slug unique avec index pour éviter les doublons
+                $baseSlug = strtolower($this->slugger->slug($characterData['name']));
+                $personnage->setSlug($baseSlug . '-' . $project->getId() . '-' . $characterIndex);
+                $characterIndex++;
 
                 // Récupérer la dramatic function
                 $dramaticFunction = $this->dramaticFunctionRepository->find($characterData['dramaticFunctionId']);
@@ -146,6 +173,32 @@ class ProjectService
 
                 $em->persist($personnage);
                 $em->persist($pdf);
+            }
+
+            $em->flush();
+        }
+
+        // Créer les parties depuis les events si fournis
+        if (isset($data['events']) && is_array($data['events']) && !isset($data['id'])) {
+            // Récupérer le status par défaut (ID 6)
+            $defaultStatus = $this->statusRepository->find(6);
+
+            // Créer une partie pour chaque event
+            foreach ($data['events'] as $eventData) {
+                if (empty($eventData['name'])) {
+                    continue;
+                }
+
+                $part = new Part();
+                $part->setName($eventData['name']);
+                $part->setDescription($eventData['description'] ?? '');
+                $part->setProject($project);
+                $part->setPosition($eventData['position'] ?? 1);
+                if ($defaultStatus) {
+                    $part->setStatus($defaultStatus);
+                }
+
+                $em->persist($part);
             }
 
             $em->flush();
