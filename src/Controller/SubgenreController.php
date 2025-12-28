@@ -53,39 +53,6 @@ class SubgenreController extends AbstractController
             return $this->json(['error' => 'Subgenre not found'], 404);
         }
 
-        // Structures narratives recommandées
-        $narrativeStructures = array_map(function($sns) {
-            $structure = $sns->getNarrativeStructure();
-
-            // Récupérer les events de cette structure, triés par position
-            $events = array_map(function($nse) {
-                $event = $nse->getEvent();
-                return [
-                    'id' => $event->getId(),
-                    'name' => $event->getName(),
-                    'description' => $event->getDescription(),
-                    'position' => $nse->getPosition(),
-                    'isOptional' => $nse->isOptional(),
-                ];
-            }, $structure->getNarrativeStructureEvents()->toArray());
-
-            // Trier les events par position
-            usort($events, fn($a, $b) => $a['position'] <=> $b['position']);
-
-            return [
-                'id' => $structure->getId(),
-                'name' => $structure->getName(),
-                'description' => $structure->getDescription(),
-                'totalBeats' => $structure->getTotalBeats(),
-                'recommendedPercentage' => $sns->getRecommendedPercentage(),
-                'isDefault' => $sns->isDefault(),
-                'events' => $events,
-            ];
-        }, $subgenre->getSubgenreNarrativeStructures()->toArray());
-
-        // Trier par pourcentage décroissant
-        usort($narrativeStructures, fn($a, $b) => $b['recommendedPercentage'] <=> $a['recommendedPercentage']);
-
         // Dramatic Functions suggérées
         $dramaticFunctions = array_map(function($sdf) {
             $df = $sdf->getDramaticFunction();
@@ -100,6 +67,36 @@ class SubgenreController extends AbstractController
             ];
         }, $subgenre->getSubgenreDramaticFunctions()->toArray());
 
+        // EventTypes avec leurs Events (triés par position)
+        $eventTypes = array_map(function($set) {
+            $eventType = $set->getEventType();
+
+            // Récupérer les events directement depuis eventType
+            $events = $eventType->getEvents();
+
+            // Formater les events seulement s'ils existent
+            $eventsData = [];
+            if ($events && count($events) > 0) {
+                $eventsData = array_map(function($event) {
+                    return [
+                        'id' => $event->getId(),
+                        'name' => $event->getName(),
+                        'description' => $event->getDescription(),
+                    ];
+                }, $events->toArray());
+            }
+
+            return [
+                'id' => $eventType->getId(),
+                'name' => $eventType->getName(),
+                'code' => $eventType->getCode(),
+                'description' => $eventType->getDescription(),
+                'weight' => $set->getWeight(),
+                'isMandatory' => $set->isMandatory(),
+                'events' => array_values($eventsData),
+            ];
+        }, $subgenre->getSubgenreEventTypes()->toArray());
+
         return $this->json([
             'id' => $subgenre->getId(),
             'name' => $subgenre->getName(),
@@ -108,7 +105,7 @@ class SubgenreController extends AbstractController
                 'id' => $subgenre->getGenre()->getId(),
                 'name' => $subgenre->getGenre()->getName(),
             ],
-            'narrativeStructures' => $narrativeStructures,
+            'eventTypes' => $eventTypes,
             'dramaticFunctions' => $dramaticFunctions,
         ]);
     }

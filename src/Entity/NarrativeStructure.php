@@ -3,8 +3,6 @@
 namespace App\Entity;
 
 use App\Repository\NarrativeStructureRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
@@ -26,23 +24,9 @@ class NarrativeStructure
     #[Groups(['narrative_structure:read', 'narrative_structure:write'])]
     private ?string $description = null;
 
-    #[ORM\Column(type: 'integer', nullable: true)]
+    #[ORM\Column(type: 'text', nullable: true)]
     #[Groups(['narrative_structure:read', 'narrative_structure:write'])]
-    private ?int $totalBeats = null;
-
-    #[ORM\OneToMany(mappedBy: 'narrativeStructure', targetEntity: NarrativeStructureEvent::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
-    #[Groups(['narrative_structure:read'])]
-    private Collection $narrativeStructureEvents;
-
-    #[ORM\OneToMany(mappedBy: 'narrativeStructure', targetEntity: SubgenreNarrativeStructure::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
-    #[Groups(['narrative_structure:read'])]
-    private Collection $subgenreNarrativeStructures;
-
-    public function __construct()
-    {
-        $this->narrativeStructureEvents = new ArrayCollection();
-        $this->subgenreNarrativeStructures = new ArrayCollection();
-    }
+    private ?string $eventTypeAssociated = null;
 
     public function getId(): ?int
     {
@@ -71,68 +55,29 @@ class NarrativeStructure
         return $this;
     }
 
-    public function getTotalBeats(): ?int
+    public function getEventTypeAssociated(): ?string
     {
-        return $this->totalBeats;
+        return $this->eventTypeAssociated;
     }
 
-    public function setTotalBeats(?int $totalBeats): self
+    public function setEventTypeAssociated(?string $eventTypeAssociated): self
     {
-        $this->totalBeats = $totalBeats;
+        $this->eventTypeAssociated = $eventTypeAssociated;
         return $this;
     }
 
     /**
-     * @return Collection<int, NarrativeStructureEvent>
+     * Get event type codes as array
+     * Example: "PERFECT_DAILY_ROUTINE;DISTURBING_DISCOVERY;CROSSING_THE_THRESHOLD"
+     * Returns: ["PERFECT_DAILY_ROUTINE", "DISTURBING_DISCOVERY", "CROSSING_THE_THRESHOLD"]
+     *
+     * @return array
      */
-    public function getNarrativeStructureEvents(): Collection
+    public function getEventTypeCodesArray(): array
     {
-        return $this->narrativeStructureEvents;
-    }
-
-    public function addNarrativeStructureEvent(NarrativeStructureEvent $narrativeStructureEvent): self
-    {
-        if (!$this->narrativeStructureEvents->contains($narrativeStructureEvent)) {
-            $this->narrativeStructureEvents->add($narrativeStructureEvent);
-            $narrativeStructureEvent->setNarrativeStructure($this);
+        if (empty($this->eventTypeAssociated)) {
+            return [];
         }
-        return $this;
-    }
-
-    public function removeNarrativeStructureEvent(NarrativeStructureEvent $narrativeStructureEvent): self
-    {
-        if ($this->narrativeStructureEvents->removeElement($narrativeStructureEvent)) {
-            if ($narrativeStructureEvent->getNarrativeStructure() === $this) {
-                $narrativeStructureEvent->setNarrativeStructure(null);
-            }
-        }
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, SubgenreNarrativeStructure>
-     */
-    public function getSubgenreNarrativeStructures(): Collection
-    {
-        return $this->subgenreNarrativeStructures;
-    }
-
-    public function addSubgenreNarrativeStructure(SubgenreNarrativeStructure $subgenreNarrativeStructure): self
-    {
-        if (!$this->subgenreNarrativeStructures->contains($subgenreNarrativeStructure)) {
-            $this->subgenreNarrativeStructures->add($subgenreNarrativeStructure);
-            $subgenreNarrativeStructure->setNarrativeStructure($this);
-        }
-        return $this;
-    }
-
-    public function removeSubgenreNarrativeStructure(SubgenreNarrativeStructure $subgenreNarrativeStructure): self
-    {
-        if ($this->subgenreNarrativeStructures->removeElement($subgenreNarrativeStructure)) {
-            if ($subgenreNarrativeStructure->getNarrativeStructure() === $this) {
-                $subgenreNarrativeStructure->setNarrativeStructure(null);
-            }
-        }
-        return $this;
+        return array_filter(array_map('trim', explode(';', $this->eventTypeAssociated)));
     }
 }

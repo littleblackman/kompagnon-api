@@ -22,6 +22,10 @@ class EventType
     #[Groups(['event_type:read', 'event_type:write', 'event:read'])]
     private ?string $name = null;
 
+    #[ORM\Column(type: 'string', length: 50, unique: true)]
+    #[Groups(['event_type:read', 'event_type:write'])]
+    private ?string $code = null;
+
     #[ORM\Column(type: 'text', nullable: true)]
     #[Groups(['event_type:read', 'event_type:write'])]
     private ?string $description = null;
@@ -47,6 +51,17 @@ class EventType
     public function setName(string $name): self
     {
         $this->name = $name;
+        return $this;
+    }
+
+    public function getCode(): ?string
+    {
+        return $this->code;
+    }
+
+    public function setCode(string $code): self
+    {
+        $this->code = $code;
         return $this;
     }
 

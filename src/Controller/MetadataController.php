@@ -11,6 +11,8 @@ use App\Repository\GenreRepository;
 use App\Repository\SubgenreRepository;
 use App\Repository\EventRepository;
 use App\Repository\NarrativeStructureRepository;
+use App\Repository\AudienceRepository;
+use App\Repository\NarrativeFormRepository;
 use App\Provider\ActantialSchemaProvider;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;
@@ -31,6 +33,8 @@ class MetadataController extends AbstractController
         SubgenreRepository $subgenreRepository,
         EventRepository $eventRepository,
         NarrativeStructureRepository $narrativeStructureRepository,
+        AudienceRepository $audienceRepository,
+        NarrativeFormRepository $narrativeFormRepository,
         ActantialSchemaProvider $actantialSchemaProvider,
         CacheInterface $cache
     ): JsonResponse
@@ -67,14 +71,20 @@ class MetadataController extends AbstractController
         });
 
         // Créer un mapping subgenre_id => event_ids pour le frontend
+        // Structure: Subgenre → SubgenreEventType → EventType → Events
         $subgenreEvents = [];
         foreach ($allGenres as $genre) {
             foreach ($genre->getSubgenres() as $subgenre) {
                 $eventIds = [];
-                foreach ($subgenre->getEvents() as $event) {
-                    $eventIds[] = $event->getId();
+                // Parcourir les SubgenreEventTypes du subgenre
+                foreach ($subgenre->getSubgenreEventTypes() as $subgenreEventType) {
+                    $eventType = $subgenreEventType->getEventType();
+                    // Récupérer tous les Events de cet EventType
+                    foreach ($eventType->getEvents() as $event) {
+                        $eventIds[] = $event->getId();
+                    }
                 }
-                $subgenreEvents[$subgenre->getId()] = $eventIds;
+                $subgenreEvents[$subgenre->getId()] = array_unique($eventIds);
             }
         }
 
@@ -84,47 +94,31 @@ class MetadataController extends AbstractController
         // DEBUG
         error_log('🔍 DEBUG: Nombre de structures: ' . count($allNarrativeStructures));
 
-        // Créer un mapping structure_id => [{eventId, position, isOptional}]
-        $structureEvents = [];
+        // Créer une version simplifiée des structures narratives
         $narrativeStructuresSimple = [];
         foreach ($allNarrativeStructures as $structure) {
-            // Créer le mapping des events
-            $structureEventsList = [];
-            foreach ($structure->getNarrativeStructureEvents() as $nse) {
-                $structureEventsList[] = [
-                    'eventId' => $nse->getEvent()->getId(),
-                    'position' => $nse->getPosition(),
-                    'isOptional' => $nse->isOptional(),
-                ];
-            }
-            // Trier par position
-            usort($structureEventsList, fn($a, $b) => $a['position'] <=> $b['position']);
-            $structureEvents[$structure->getId()] = $structureEventsList;
-
-            // DEBUG pour les 2 premières structures
-            if ($structure->getId() <= 2) {
-                error_log(sprintf('🔍 Structure #%d "%s": %d events',
-                    $structure->getId(),
-                    $structure->getName(),
-                    count($structureEventsList)
-                ));
-            }
-
-            // Créer une version simplifiée de la structure (sans les relations)
+            $eventTypeCodes = $structure->getEventTypeCodesArray();
             $narrativeStructuresSimple[] = [
                 'id' => $structure->getId(),
                 'name' => $structure->getName(),
                 'description' => $structure->getDescription(),
-                'totalBeats' => $structure->getTotalBeats(),
+                'totalBeats' => count($eventTypeCodes), // Calculé à partir du nombre de codes
+                'eventTypeAssociated' => $structure->getEventTypeAssociated(),
+                'eventTypeCodes' => $eventTypeCodes,
             ];
         }
         $narrativeStructures = $narrativeStructuresSimple;
 
-        // DEBUG final
-        error_log('🔍 DEBUG: structureEvents[1] count: ' . count($structureEvents[1] ?? []));
-
         // Récupérer le schéma actantiel via le provider
         $actantialSchema = iterator_to_array($actantialSchemaProvider->provide(new \ApiPlatform\Metadata\GetCollection(), [], []));
+
+        // Charger Audience et NarrativeForm
+        $audiences = $cache->get('audiences', function() use ($audienceRepository) {
+            return $audienceRepository->findAll();
+        });
+        $narrativeForms = $cache->get('narrative_forms', function() use ($narrativeFormRepository) {
+            return $narrativeFormRepository->findAll();
+        });
 
        return $this->json(
            [
@@ -138,8 +132,9 @@ class MetadataController extends AbstractController
                'subgenres' => $subgenres,
                'events' => $events,
                'narrativeStructures' => $narrativeStructures,
+               'audiences' => $audiences,
+               'narrativeForms' => $narrativeForms,
                'subgenreEvents' => $subgenreEvents, // Mapping subgenreId => [eventIds]
-               'structureEvents' => $structureEvents, // Mapping structureId => [{eventId, position, isOptional}]
            ],
            200,
            [],

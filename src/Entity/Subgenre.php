@@ -31,23 +31,19 @@ class Subgenre
     // Pas de Groups ici pour éviter la référence circulaire Genre → Subgenre → Genre
     private ?Genre $genre = null;
 
-    #[ORM\ManyToMany(targetEntity: Event::class, mappedBy: 'subgenres')]
-    // Pas de Groups ici pour éviter la référence circulaire
-    private Collection $events;
-
     #[ORM\OneToMany(mappedBy: 'subgenre', targetEntity: SubgenreDramaticFunction::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
     // Pas de Groups ici pour éviter surcharge dans metadata
     private Collection $subgenreDramaticFunctions;
 
-    #[ORM\OneToMany(mappedBy: 'subgenre', targetEntity: SubgenreNarrativeStructure::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[ORM\OneToMany(mappedBy: 'subgenre', targetEntity: SubgenreEventType::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[ORM\OrderBy(['weight' => 'DESC'])]
     // Pas de Groups ici pour éviter surcharge dans metadata
-    private Collection $subgenreNarrativeStructures;
+    private Collection $subgenreEventTypes;
 
     public function __construct()
     {
-        $this->events = new ArrayCollection();
         $this->subgenreDramaticFunctions = new ArrayCollection();
-        $this->subgenreNarrativeStructures = new ArrayCollection();
+        $this->subgenreEventTypes = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -89,31 +85,6 @@ class Subgenre
     }
 
     /**
-     * @return Collection<int, Event>
-     */
-    public function getEvents(): Collection
-    {
-        return $this->events;
-    }
-
-    public function addEvent(Event $event): self
-    {
-        if (!$this->events->contains($event)) {
-            $this->events->add($event);
-            $event->addSubgenre($this);
-        }
-        return $this;
-    }
-
-    public function removeEvent(Event $event): self
-    {
-        if ($this->events->removeElement($event)) {
-            $event->removeSubgenre($this);
-        }
-        return $this;
-    }
-
-    /**
      * @return Collection<int, SubgenreDramaticFunction>
      */
     public function getSubgenreDramaticFunctions(): Collection
@@ -141,27 +112,27 @@ class Subgenre
     }
 
     /**
-     * @return Collection<int, SubgenreNarrativeStructure>
+     * @return Collection<int, SubgenreEventType>
      */
-    public function getSubgenreNarrativeStructures(): Collection
+    public function getSubgenreEventTypes(): Collection
     {
-        return $this->subgenreNarrativeStructures;
+        return $this->subgenreEventTypes;
     }
 
-    public function addSubgenreNarrativeStructure(SubgenreNarrativeStructure $subgenreNarrativeStructure): self
+    public function addSubgenreEventType(SubgenreEventType $subgenreEventType): self
     {
-        if (!$this->subgenreNarrativeStructures->contains($subgenreNarrativeStructure)) {
-            $this->subgenreNarrativeStructures->add($subgenreNarrativeStructure);
-            $subgenreNarrativeStructure->setSubgenre($this);
+        if (!$this->subgenreEventTypes->contains($subgenreEventType)) {
+            $this->subgenreEventTypes->add($subgenreEventType);
+            $subgenreEventType->setSubgenre($this);
         }
         return $this;
     }
 
-    public function removeSubgenreNarrativeStructure(SubgenreNarrativeStructure $subgenreNarrativeStructure): self
+    public function removeSubgenreEventType(SubgenreEventType $subgenreEventType): self
     {
-        if ($this->subgenreNarrativeStructures->removeElement($subgenreNarrativeStructure)) {
-            if ($subgenreNarrativeStructure->getSubgenre() === $this) {
-                $subgenreNarrativeStructure->setSubgenre(null);
+        if ($this->subgenreEventTypes->removeElement($subgenreEventType)) {
+            if ($subgenreEventType->getSubgenre() === $this) {
+                $subgenreEventType->setSubgenre(null);
             }
         }
         return $this;
