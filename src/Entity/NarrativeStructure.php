@@ -24,9 +24,9 @@ class NarrativeStructure
     #[Groups(['narrative_structure:read', 'narrative_structure:write'])]
     private ?string $description = null;
 
-    #[ORM\Column(type: 'text', nullable: true)]
+    #[ORM\Column(type: 'json', nullable: true)]
     #[Groups(['narrative_structure:read', 'narrative_structure:write'])]
-    private ?string $eventTypeAssociated = null;
+    private ?array $narrativePartOrder = null;
 
     public function getId(): ?int
     {
@@ -55,29 +55,46 @@ class NarrativeStructure
         return $this;
     }
 
-    public function getEventTypeAssociated(): ?string
+    public function getNarrativePartOrder(): ?array
     {
-        return $this->eventTypeAssociated;
+        return $this->narrativePartOrder;
     }
 
-    public function setEventTypeAssociated(?string $eventTypeAssociated): self
+    public function setNarrativePartOrder(?array $narrativePartOrder): self
     {
-        $this->eventTypeAssociated = $eventTypeAssociated;
+        $this->narrativePartOrder = $narrativePartOrder;
         return $this;
     }
 
     /**
-     * Get event type codes as array
-     * Example: "PERFECT_DAILY_ROUTINE;DISTURBING_DISCOVERY;CROSSING_THE_THRESHOLD"
-     * Returns: ["PERFECT_DAILY_ROUTINE", "DISTURBING_DISCOVERY", "CROSSING_THE_THRESHOLD"]
+     * Get all narrative part codes from the structure in order
+     * Example JSON: {"Acte 1": ["SETUP", "DISRUPTION"], "Acte 2": ["ESCALATION", "TURN"]}
+     * Returns: ["SETUP", "DISRUPTION", "ESCALATION", "TURN"]
      *
      * @return array
      */
-    public function getEventTypeCodesArray(): array
+    public function getNarrativePartCodesArray(): array
     {
-        if (empty($this->eventTypeAssociated)) {
+        if (empty($this->narrativePartOrder)) {
             return [];
         }
-        return array_filter(array_map('trim', explode(';', $this->eventTypeAssociated)));
+
+        $codes = [];
+        foreach ($this->narrativePartOrder as $actName => $partCodes) {
+            if (is_array($partCodes)) {
+                $codes = array_merge($codes, $partCodes);
+            }
+        }
+        return $codes;
+    }
+
+    /**
+     * Get the total number of beats (narrative parts) in this structure
+     *
+     * @return int
+     */
+    public function getTotalBeats(): int
+    {
+        return count($this->getNarrativePartCodesArray());
     }
 }

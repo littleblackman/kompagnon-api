@@ -254,6 +254,33 @@ class PersonnageService
             ];
         }
 
+        // Build narrative arcs array
+        $narrativeArcs = [];
+        foreach ($personnage->getPersonnageNarrativeArcs() as $pna) {
+            $narrativeArcs[] = [
+                'id' => $pna->getId(),
+                'narrativeArc' => [
+                    'id' => $pna->getNarrativeArc()->getId(),
+                    'name' => $pna->getNarrativeArc()->getName(),
+                    'description' => $pna->getNarrativeArc()->getDescription(),
+                    'steps' => $pna->getNarrativeArc()->getSteps(),
+                    'variants' => $pna->getNarrativeArc()->getVariants(),
+                    'tendency' => $pna->getNarrativeArc()->getTendency(),
+                ],
+                'weight' => $pna->getWeight(),
+                'steps' => $pna->getSteps() ?? [],
+                'comment' => $pna->getComment(),
+                'fromSequence' => $pna->getFromSequence() ? [
+                    'id' => $pna->getFromSequence()->getId(),
+                    'name' => $pna->getFromSequence()->getName(),
+                ] : null,
+                'toSequence' => $pna->getToSequence() ? [
+                    'id' => $pna->getToSequence()->getId(),
+                    'name' => $pna->getToSequence()->getName(),
+                ] : null,
+            ];
+        }
+
         // Build response
         return [
             'id' => $personnage->getId(),
@@ -269,6 +296,7 @@ class PersonnageService
             'images' => $personnage->getImagesArray(),
             'avatar' => $personnage->getImagesArray()[0] ?? null,
             'personnageDramaticFunctions' => $dramaticFunctions,
+            'personnageNarrativeArcs' => $narrativeArcs,
             'project' => [
                 'id' => $project?->getId(),
                 'name' => $project?->getName(),

@@ -31,6 +31,10 @@ class Event
     #[Groups(['event:read', 'event:write'])]
     private ?EventType $eventType = null;
 
+    #[ORM\Column(type: 'boolean', nullable: false, options: ['default' => 0])]
+    #[Groups(['event:read', 'event:write', 'subgenre:read'])]
+    private bool $isOptional = false;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -66,6 +70,17 @@ class Event
     public function setEventType(?EventType $eventType): self
     {
         $this->eventType = $eventType;
+        return $this;
+    }
+
+    public function isOptional(): bool
+    {
+        return $this->isOptional;
+    }
+
+    public function setIsOptional(bool $isOptional): self
+    {
+        $this->isOptional = $isOptional;
         return $this;
     }
 }

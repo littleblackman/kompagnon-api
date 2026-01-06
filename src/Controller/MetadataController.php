@@ -13,6 +13,8 @@ use App\Repository\EventRepository;
 use App\Repository\NarrativeStructureRepository;
 use App\Repository\AudienceRepository;
 use App\Repository\NarrativeFormRepository;
+use App\Repository\NarrativePartRepository;
+use App\Repository\EventTypeRepository;
 use App\Provider\ActantialSchemaProvider;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;
@@ -32,7 +34,9 @@ class MetadataController extends AbstractController
         GenreRepository $genreRepository,
         SubgenreRepository $subgenreRepository,
         EventRepository $eventRepository,
+        EventTypeRepository $eventTypeRepository,
         NarrativeStructureRepository $narrativeStructureRepository,
+        NarrativePartRepository $narrativePartRepository,
         AudienceRepository $audienceRepository,
         NarrativeFormRepository $narrativeFormRepository,
         ActantialSchemaProvider $actantialSchemaProvider,
@@ -88,6 +92,14 @@ class MetadataController extends AbstractController
             }
         }
 
+        // Charger les NarrativeParts
+        $narrativeParts = $cache->get('narrative_parts', function() use ($narrativePartRepository) {
+            return $narrativePartRepository->findAll();
+        });
+
+        // Charger les EventTypes avec leur NarrativePart
+        $allEventTypes = $eventTypeRepository->findAll();
+
         // Charger les structures pour créer le mapping (sans les sérialiser complètement)
         $allNarrativeStructures = $narrativeStructureRepository->findAll();
 
@@ -97,14 +109,13 @@ class MetadataController extends AbstractController
         // Créer une version simplifiée des structures narratives
         $narrativeStructuresSimple = [];
         foreach ($allNarrativeStructures as $structure) {
-            $eventTypeCodes = $structure->getEventTypeCodesArray();
             $narrativeStructuresSimple[] = [
                 'id' => $structure->getId(),
                 'name' => $structure->getName(),
                 'description' => $structure->getDescription(),
-                'totalBeats' => count($eventTypeCodes), // Calculé à partir du nombre de codes
-                'eventTypeAssociated' => $structure->getEventTypeAssociated(),
-                'eventTypeCodes' => $eventTypeCodes,
+                'totalBeats' => $structure->getTotalBeats(),
+                'narrativePartOrder' => $structure->getNarrativePartOrder(),
+                'narrativePartCodes' => $structure->getNarrativePartCodesArray(),
             ];
         }
         $narrativeStructures = $narrativeStructuresSimple;
@@ -131,6 +142,8 @@ class MetadataController extends AbstractController
                'genres' => $genres,
                'subgenres' => $subgenres,
                'events' => $events,
+               'eventTypes' => $allEventTypes,
+               'narrativeParts' => $narrativeParts,
                'narrativeStructures' => $narrativeStructures,
                'audiences' => $audiences,
                'narrativeForms' => $narrativeForms,
@@ -138,7 +151,7 @@ class MetadataController extends AbstractController
            ],
            200,
            [],
-           ['groups' => ['metadata_read', 'narrative_arc:read', 'dramatic_function:read', 'genre:read', 'subgenre:read', 'event:read', 'narrative_structure:read']]
+           ['groups' => ['metadata_read', 'narrative_arc:read', 'dramatic_function:read', 'genre:read', 'subgenre:read', 'event:read', 'event_type:read', 'narrative_part:read', 'narrative_structure:read']]
        );
     }
 }

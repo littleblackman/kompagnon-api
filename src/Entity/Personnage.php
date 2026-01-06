@@ -82,10 +82,15 @@ class Personnage
     #[Groups(["personnage:read", "project:read"])]
     private Collection $personnageDramaticFunctions;
 
+    #[ORM\OneToMany(targetEntity: PersonnageNarrativeArc::class, mappedBy: 'personnage', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[Groups(["personnage:read", "project:read"])]
+    private Collection $personnageNarrativeArcs;
+
     public function __construct()
     {
         $this->sequencePersonnages = new ArrayCollection();
         $this->personnageDramaticFunctions = new ArrayCollection();
+        $this->personnageNarrativeArcs = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -330,6 +335,31 @@ class Personnage
     public function removePersonnageDramaticFunction(PersonnageDramaticFunction $personnageDramaticFunction): self
     {
         $this->personnageDramaticFunctions->removeElement($personnageDramaticFunction);
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PersonnageNarrativeArc>
+     */
+    public function getPersonnageNarrativeArcs(): Collection
+    {
+        return $this->personnageNarrativeArcs;
+    }
+
+    public function addPersonnageNarrativeArc(PersonnageNarrativeArc $personnageNarrativeArc): self
+    {
+        if (!$this->personnageNarrativeArcs->contains($personnageNarrativeArc)) {
+            $this->personnageNarrativeArcs->add($personnageNarrativeArc);
+            $personnageNarrativeArc->setPersonnage($this);
+        }
+
+        return $this;
+    }
+
+    public function removePersonnageNarrativeArc(PersonnageNarrativeArc $personnageNarrativeArc): self
+    {
+        $this->personnageNarrativeArcs->removeElement($personnageNarrativeArc);
 
         return $this;
     }

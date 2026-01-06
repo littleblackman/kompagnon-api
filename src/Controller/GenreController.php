@@ -25,17 +25,20 @@ class GenreController extends AbstractController
         $genres = $this->entityManager->getRepository(Genre::class)->findAll();
 
         $data = array_map(function(Genre $genre) {
+            $subgenres = $genre->getSubgenres()->toArray();
             return [
                 'id' => $genre->getId(),
                 'name' => $genre->getName(),
                 'description' => $genre->getDescription(),
+                'subgenresCount' => count($subgenres),
                 'subgenres' => array_map(function($subgenre) {
                     return [
                         'id' => $subgenre->getId(),
                         'name' => $subgenre->getName(),
                         'description' => $subgenre->getDescription(),
+                        'eventTypesCount' => $subgenre->getSubgenreEventTypes()->count(),
                     ];
-                }, $genre->getSubgenres()->toArray())
+                }, $subgenres)
             ];
         }, $genres);
 

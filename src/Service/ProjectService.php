@@ -7,12 +7,14 @@ use App\Entity\Part;
 use App\Entity\Sequence;
 use App\Entity\Personnage;
 use App\Entity\PersonnageDramaticFunction;
+use App\Entity\PersonnageNarrativeArc;
 use App\Repository\PartRepository;
 use App\Repository\TypeRepository;
 use App\Repository\ProjectRepository;
 use App\Repository\SequenceRepository;
 use App\Repository\StatusRepository;
 use App\Repository\DramaticFunctionRepository;
+use App\Repository\NarrativeArcRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\String\Slugger\SluggerInterface;
@@ -26,6 +28,7 @@ class ProjectService
     private TypeRepository $typeRepository;
     private StatusRepository $statusRepository;
     private DramaticFunctionRepository $dramaticFunctionRepository;
+    private NarrativeArcRepository $narrativeArcRepository;
     private EntityManagerInterface $entityManager;
     private SluggerInterface $slugger;
     private Security $security;
@@ -37,6 +40,7 @@ class ProjectService
         TypeRepository $typeRepository,
         StatusRepository $statusRepository,
         DramaticFunctionRepository $dramaticFunctionRepository,
+        NarrativeArcRepository $narrativeArcRepository,
         EntityManagerInterface $entityManager,
         SluggerInterface $slugger,
         Security $security
@@ -48,6 +52,7 @@ class ProjectService
         $this->typeRepository = $typeRepository;
         $this->statusRepository = $statusRepository;
         $this->dramaticFunctionRepository = $dramaticFunctionRepository;
+        $this->narrativeArcRepository = $narrativeArcRepository;
         $this->entityManager = $entityManager;
         $this->slugger = $slugger;
         $this->security = $security;
@@ -173,13 +178,79 @@ class ProjectService
 
                 $em->persist($personnage);
                 $em->persist($pdf);
+
+                // Créer la liaison personnage-narrative_arc si un arc est sélectionné
+                if (!empty($characterData['narrativeArcId'])) {
+                    $narrativeArc = $this->narrativeArcRepository->find($characterData['narrativeArcId']);
+                    if ($narrativeArc) {
+                        $pna = new PersonnageNarrativeArc();
+                        $pna->setPersonnage($personnage);
+                        $pna->setNarrativeArc($narrativeArc);
+                        $pna->setWeight(50); // Poids par défaut
+                        // fromSequence et toSequence sont null pour l'instant, l'utilisateur pourra les définir plus tard
+
+                        $em->persist($pna);
+                    }
+                }
             }
 
             $em->flush();
         }
 
-        // Créer les parties depuis les events si fournis
-        if (isset($data['events']) && is_array($data['events']) && !isset($data['id'])) {
+        // Créer les parties et séquences depuis la structure narrative personnalisée
+        if (isset($data['narrativeSections']) && is_array($data['narrativeSections']) && !isset($data['id'])) {
+            // Récupérer le status par défaut (ID 6)
+            $defaultStatus = $this->statusRepository->find(6);
+
+            $partPosition = 1;
+            foreach ($data['narrativeSections'] as $section) {
+                if (empty($section['sectionName'])) {
+                    continue;
+                }
+
+                // Créer la Part depuis le nom de section (ex: "Montée", "Bascule", etc.)
+                $part = new Part();
+                $part->setName($section['sectionName']);
+                $part->setDescription(''); // Description vide par défaut
+                $part->setProject($project);
+                $part->setPosition($partPosition);
+                if ($defaultStatus) {
+                    $part->setStatus($defaultStatus);
+                }
+
+                $em->persist($part);
+                $em->flush(); // Flush pour obtenir l'ID de la Part
+
+                // Créer les Sequences depuis les events de cette section
+                if (isset($section['events']) && is_array($section['events'])) {
+                    $sequencePosition = 1;
+                    foreach ($section['events'] as $event) {
+                        if (empty($event['name'])) {
+                            continue;
+                        }
+
+                        $sequence = new Sequence();
+                        $sequence->setName($event['name']);
+                        $sequence->setDescription($event['description'] ?? '');
+                        $sequence->setPart($part);
+                        $sequence->setPosition($sequencePosition);
+                        if ($defaultStatus) {
+                            $sequence->setStatus($defaultStatus);
+                        }
+
+                        $em->persist($sequence);
+                        $sequencePosition++;
+                    }
+                }
+
+                $partPosition++;
+            }
+
+            $em->flush();
+        }
+
+        // LEGACY: Créer les parties depuis les events si fournis (compatibilité)
+        if (isset($data['events']) && is_array($data['events']) && !isset($data['id']) && !isset($data['narrativeSections'])) {
             // Récupérer le status par défaut (ID 6)
             $defaultStatus = $this->statusRepository->find(6);
 

@@ -30,6 +30,15 @@ class EventType
     #[Groups(['event_type:read', 'event_type:write'])]
     private ?string $description = null;
 
+    #[ORM\ManyToOne(targetEntity: NarrativePart::class, inversedBy: 'eventTypes')]
+    #[ORM\JoinColumn(name: 'narrative_part_id', nullable: true, onDelete: 'SET NULL')]
+    #[Groups(['event_type:read', 'event:read'])]
+    private ?NarrativePart $narrativePart = null;
+
+    #[ORM\Column(type: 'string', length: 50, nullable: true)]
+    #[Groups(['event_type:read'])]
+    private ?string $narrativePartCode = null;
+
     #[ORM\OneToMany(mappedBy: 'eventType', targetEntity: Event::class)]
     private Collection $events;
 
@@ -100,6 +109,34 @@ class EventType
                 $event->setEventType(null);
             }
         }
+        return $this;
+    }
+
+    public function getNarrativePart(): ?NarrativePart
+    {
+        return $this->narrativePart;
+    }
+
+    public function setNarrativePart(?NarrativePart $narrativePart): self
+    {
+        $this->narrativePart = $narrativePart;
+        // Synchroniser le code
+        if ($narrativePart) {
+            $this->narrativePartCode = $narrativePart->getCode();
+        } else {
+            $this->narrativePartCode = null;
+        }
+        return $this;
+    }
+
+    public function getNarrativePartCode(): ?string
+    {
+        return $this->narrativePartCode;
+    }
+
+    public function setNarrativePartCode(?string $narrativePartCode): self
+    {
+        $this->narrativePartCode = $narrativePartCode;
         return $this;
     }
 }

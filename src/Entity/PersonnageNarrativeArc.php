@@ -32,6 +32,9 @@ class PersonnageNarrativeArc
     #[Assert\Range(min: 0, max: 100)]
     private int $weight = 50;
 
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $steps = null;
+
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $comment = null;
 
@@ -92,6 +95,17 @@ class PersonnageNarrativeArc
     public function setWeight(int $weight): self
     {
         $this->weight = $weight;
+        return $this;
+    }
+
+    public function getSteps(): ?array
+    {
+        return $this->steps;
+    }
+
+    public function setSteps(?array $steps): self
+    {
+        $this->steps = $steps;
         return $this;
     }
 
