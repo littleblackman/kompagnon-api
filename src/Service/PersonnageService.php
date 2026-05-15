@@ -217,6 +217,31 @@ class PersonnageService
     }
 
     /**
+     * Delete a single image from a personnage and remove the physical file
+     */
+    public function deleteImage(int $personnageId, string $imageUrl): bool
+    {
+        $personnage = $this->personnageRepository->find($personnageId);
+        if (!$personnage) {
+            return false;
+        }
+
+        $currentImages = $personnage->getImagesArray();
+        $updatedImages = array_values(array_filter($currentImages, fn($img) => $img !== $imageUrl));
+
+        $publicDir = __DIR__ . '/../../public/';
+        $filePath = $publicDir . ltrim($imageUrl, '/');
+        if (file_exists($filePath)) {
+            unlink($filePath);
+        }
+
+        $personnage->setImagesArray($updatedImages);
+        $this->em->flush();
+
+        return true;
+    }
+
+    /**
      * Get detailed information about a personnage including stats
      */
     public function getPersonnageDetails(int $personnageId): ?array

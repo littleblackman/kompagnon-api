@@ -128,6 +128,28 @@ class PersonnageController extends AbstractController
         }
     }
 
+    #[Route('/api/personnage/{id}/delete-image', name: 'api_personnage_delete_image', methods: ['DELETE'])]
+    public function deleteImage(int $id, Request $request, PersonnageService $personnageService): JsonResponse
+    {
+        try {
+            $data = json_decode($request->getContent(), true);
+
+            if (empty($data['imageUrl'])) {
+                return $this->json(['error' => 'URL de l\'image manquante'], 400);
+            }
+
+            $success = $personnageService->deleteImage($id, $data['imageUrl']);
+
+            if (!$success) {
+                return $this->json(['error' => 'Personnage non trouvé'], 404);
+            }
+
+            return $this->json(['success' => true], 200);
+        } catch (\Exception $e) {
+            return $this->json(['error' => 'Erreur lors de la suppression: ' . $e->getMessage()], 500);
+        }
+    }
+
     #[Route('/api/personnage/{slug}/details', name: 'api_personnage_details', methods: ['GET'])]
     public function getPersonnageDetails(string $slug, PersonnageService $personnageService): JsonResponse
     {
