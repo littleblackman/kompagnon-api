@@ -195,6 +195,7 @@ class PersonnageService
 
         // Update personnage with new images
         $personnage->setImagesArray($currentImages);
+        $personnage->setAvatar($currentImages[0] ?? null);
         $this->em->flush();
 
         return $uploadedUrls;
@@ -211,6 +212,7 @@ class PersonnageService
         }
 
         $personnage->setImagesArray($orderedUrls);
+        $personnage->setAvatar($orderedUrls[0] ?? null);
         $this->em->flush();
 
         return true;
@@ -236,6 +238,7 @@ class PersonnageService
         }
 
         $personnage->setImagesArray($updatedImages);
+        $personnage->setAvatar($updatedImages[0] ?? null);
         $this->em->flush();
 
         return true;
