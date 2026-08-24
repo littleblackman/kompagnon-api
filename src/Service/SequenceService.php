@@ -38,37 +38,46 @@ class SequenceService
     {
         $em = $this->entityManager;
 
-        if(isset($data['id']))  {
+        $isNew = !isset($data['id']);
+
+        if(!$isNew)  {
             $sequence = $this->sequenceRepository->find($data['id']);
+            if (!$sequence) {
+                throw new \Exception('Séquence non trouvée');
+            }
         } else {
             $sequence = new Sequence();
-            $part = $this->partRepository->find($data['part_id']);
+            $part = $this->partRepository->find($data['part_id'] ?? null);
+            if (!$part) {
+                throw new \Exception('Partie non trouvée');
+            }
             $status = $this->statusRepository->find(6);
             $sequence->setPart($part);
             $sequence->setStatus($status);
         }
 
-        // Gestion de la position
-        if (isset($data['afterSequenceId'])) {
-            $afterSequence = $this->sequenceRepository->find($data['afterSequenceId']);
-            if ($afterSequence) {
-                // Décaler d'abord toutes les séquences suivantes
-                $this->shiftSequences($afterSequence->getPart(), $afterSequence->getPosition() + 1);
-                // Puis positionner la nouvelle séquence
-                $sequence->setPosition($afterSequence->getPosition() + 1);
-            }
-        } else {
-            // Si pas de séquence de référence, placer au début
-            $this->shiftSequences($sequence->getPart(), 1);
-            $sequence->setPosition(1);
+        // La position n'est calculée qu'à la création : une édition de contenu
+        // ne doit jamais réordonner la partie (le réordonnancement passe par /sequence/order).
+        if ($isNew) {
+            $afterSequence = isset($data['afterSequenceId'])
+                ? $this->sequenceRepository->find($data['afterSequenceId'])
+                : null;
+
+            // Pas de séquence de référence : placer au début de la partie
+            $position = $afterSequence ? $afterSequence->getPosition() + 1 : 1;
+
+            $this->shiftSequences($sequence->getPart(), $position);
+            $sequence->setPosition($position);
         }
-        
-        $sequence->setName($data['name']);
-        $sequence->setDescription($data['description']);
-        $sequence->setIntention($data['intention'] ?? null);
-        $sequence->setAestheticIdea($data['aesthetic_idea'] ?? null);
-        $sequence->setInformation($data['information'] ?? true);
-        
+
+        // Seuls les champs présents dans le payload sont écrits, pour qu'une
+        // sauvegarde partielle n'efface pas les autres.
+        if (array_key_exists('name', $data))           $sequence->setName($data['name']);
+        if (array_key_exists('description', $data))    $sequence->setDescription($data['description']);
+        if (array_key_exists('intention', $data))      $sequence->setIntention($data['intention']);
+        if (array_key_exists('aesthetic_idea', $data)) $sequence->setAestheticIdea($data['aesthetic_idea']);
+        if (array_key_exists('information', $data))    $sequence->setInformation($data['information']);
+
         $em->persist($sequence);
         
         // Flush final pour s'assurer que tous les changements sont persistés
@@ -95,6 +104,22 @@ class SequenceService
         }
         // Flush pour s'assurer que les changements sont persistés
         $this->entityManager->flush();
+    }
+
+    /**
+     * Retourne les positions courantes des séquences d'une partie, triées.
+     * Permet au front de se resynchroniser sans recharger tout le projet.
+     *
+     * @return array<int, array{id: int, position: int}>
+     */
+    public function getPositions(Part $part): array
+    {
+        $sequences = $this->sequenceRepository->findBy(['part' => $part], ['position' => 'ASC']);
+
+        return array_map(
+            fn (Sequence $seq) => ['id' => $seq->getId(), 'position' => $seq->getPosition()],
+            $sequences
+        );
     }
 
     /**

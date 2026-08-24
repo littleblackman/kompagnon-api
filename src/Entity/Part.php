@@ -43,6 +43,7 @@ class Part
     private Status $status;
 
     #[ORM\OneToMany(targetEntity: Sequence::class, mappedBy: 'part', cascade: ['persist', 'remove'])]
+    #[ORM\OrderBy(['position' => 'ASC'])]
     #[Groups(['part:read'])]
     private Collection $sequences;
 

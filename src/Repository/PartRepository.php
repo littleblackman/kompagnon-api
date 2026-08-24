@@ -13,6 +13,7 @@ class PartRepository extends ServiceEntityRepository
     private ManagerRegistry $managerRegistry;
     private ProjectRepository $projectRepository;
     private StatusRepository $statusRepository;
+    private EntityManagerInterface $em;
 
     public function __construct(ManagerRegistry $registry, ProjectRepository $projectRepository, StatusRepository $statusRepository, EntityManagerInterface $em)
     {
@@ -37,10 +38,13 @@ class PartRepository extends ServiceEntityRepository
 
         $part->setName($data['name'])
             ->setDescription($data['description'] ?? '')
-            ->setPosition($data['order'] ?? 0)
             ->setUpdatedAt(new \DateTimeImmutable());
         if (!$part->getId()) {
-            $part->setProject($project)
+            // La position définitive est posée juste après par PartService::reOrderPart.
+            // Ne jamais la réécrire sur un update : renommer une partie ne doit
+            // pas la faire remonter en tête du projet.
+            $part->setPosition($data['order'] ?? 0)
+                ->setProject($project)
                 ->setStatus($status)
                 ->setCreatedAt(new \DateTimeImmutable());
         }
@@ -52,13 +56,26 @@ class PartRepository extends ServiceEntityRepository
         return $part;
     }
 
+    /**
+     * Réécrit les positions en 1..N à partir d'une liste d'ids ordonnée.
+     *
+     * @param array<int, int> $positions ids des parties, dans l'ordre voulu
+     */
     public function bulkUpdatePositions(array $positions)
     {
+        if (empty($positions)) {
+            return 0;
+        }
 
         $caseStatements = [];
         $ids = [];
-        foreach ($positions as $position => $id) {
-            $caseStatements[] = 'WHEN p.id = '.$id.' THEN '.$position. ' ';
+        $params = [];
+
+        foreach (array_values($positions) as $index => $id) {
+            // Base 1, pour s'aligner sur les séquences et les scènes
+            $caseStatements[] = "WHEN p.id = :id$index THEN :pos$index";
+            $params["id$index"]  = $id;
+            $params["pos$index"] = $index + 1;
             $ids[] = $id;
         }
 
@@ -70,7 +87,11 @@ class PartRepository extends ServiceEntityRepository
         WHERE p.id IN (:ids)
     ");
 
+        foreach ($params as $key => $value) {
+            $query->setParameter($key, $value);
+        }
         $query->setParameter('ids', $ids);
+
         return $query->execute();
     }
 }

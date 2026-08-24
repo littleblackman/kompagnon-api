@@ -5,6 +5,7 @@ namespace App\Service;
 use App\Repository\ProjectRepository;
 use App\Repository\PartRepository;
 use App\Entity\Part;
+use Doctrine\ORM\EntityManagerInterface;
 
 
 class PartService
@@ -12,15 +13,18 @@ class PartService
 
     private ProjectRepository $projectRepository;
     private PartRepository $partRepository;
+    private EntityManagerInterface $entityManager;
 
 
     public function __construct(
         ProjectRepository $projectRepository,
-        PartRepository $partRepository
+        PartRepository $partRepository,
+        EntityManagerInterface $entityManager
     )
     {
         $this->projectRepository = $projectRepository;
         $this->partRepository = $partRepository;
+        $this->entityManager = $entityManager;
     }
 
     public function createOrUpdate(array $data): ?array
@@ -45,7 +49,37 @@ class PartService
         ];
     }
 
-    public function reOrderPart(Part $currentPart, int $afterPartId = null): ?array
+    /**
+     * Supprime une partie (et sa hiérarchie, en cascade) puis renumérote
+     * les parties restantes du projet.
+     *
+     * @return array<int, int> les ids des parties restantes, dans l'ordre
+     */
+    public function delete(int $id): array
+    {
+        $part = $this->partRepository->find($id);
+        if (!$part) {
+            throw new \Exception('La partie n\'existe pas');
+        }
+
+        $project = $part->getProject();
+
+        $this->entityManager->remove($part);
+        $this->entityManager->flush();
+
+        // Combler le trou laissé par la partie supprimée
+        $remaining = $this->partRepository->findBy(
+            ['project' => $project],
+            ['position' => 'ASC']
+        );
+
+        $ids = array_map(fn (Part $p) => $p->getId(), $remaining);
+        $this->partRepository->bulkUpdatePositions($ids);
+
+        return $ids;
+    }
+
+    public function reOrderPart(Part $currentPart, ?int $afterPartId = null): ?array
     {
         // retrieve all parts of the project
         $project = $this->projectRepository->find($currentPart->getProject());

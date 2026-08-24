@@ -57,6 +57,7 @@ class Sequence
     private Status $status;
 
     #[ORM\OneToMany(targetEntity: Scene::class, mappedBy: 'sequence', cascade: ['persist', 'remove'])]
+    #[ORM\OrderBy(['position' => 'ASC'])]
     #[Groups(['sequence:read'])]
     private Collection $scenes;
 

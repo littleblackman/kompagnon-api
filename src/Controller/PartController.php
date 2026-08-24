@@ -7,7 +7,6 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use App\Repository\PartRepository;
 
 class PartController extends AbstractController
 {
@@ -19,19 +18,23 @@ class PartController extends AbstractController
             return $this->json(['error' => 'Le nom est obligatoire'], 400);
         }
         $result = $partService->createOrUpdate($data);
-        return $this->json($result);
+
+        // Sans groupes, la sérialisation part en Part -> Project -> parts -> Part…
+        return $this->json($result, 200, [], ['groups' => ['part:read']]);
     }
 
     #[Route('/api/part/delete/{id}', name: 'api_part_delete', methods: ['DELETE'])]
-    public function deletePart(Request $request, PartRepository $partRepository): JsonResponse
+    public function deletePart(int $id, PartService $partService): JsonResponse
     {
-        $part = $partRepository->find($request->get('id'));
-        if (!$part) {
-            return $this->json(['error' => 'La partie n\'existe pas'], 404);
+        try {
+            $positions = $partService->delete($id);
+        } catch (\Exception $e) {
+            return $this->json(['error' => $e->getMessage()], 404);
         }
-        $em = $partRepository->getEntityManager();
-        $em->remove($part);
-        $em->flush();
-        return $this->json(['message' => 'La partie a été supprimée'], 200);
+
+        return $this->json([
+            'message'   => 'La partie a été supprimée',
+            'positions' => $positions,
+        ], 200);
     }
 }

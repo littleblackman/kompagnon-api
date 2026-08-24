@@ -28,38 +28,87 @@ class SceneService
     {
         $em = $this->entityManager;
 
-        if (isset($data['id'])) {
+        $isNew = !isset($data['id']);
+
+        if (!$isNew) {
             // UPDATE - Mise à jour d'une scène existante
             $scene = $this->sceneRepository->find($data['id']);
+            if (!$scene) {
+                throw new \Exception('Scene non trouvée');
+            }
         } else {
             // CREATE - Création d'une nouvelle scène
             $scene = new Scene();
-            $sequence = $this->sequenceRepository->find($data['sequence_id']);
+            $sequence = $this->sequenceRepository->find($data['sequence_id'] ?? null);
+            if (!$sequence) {
+                throw new \Exception('Séquence non trouvée');
+            }
             $status = $this->statusRepository->find(6);
             $scene->setSequence($sequence);
             $scene->setStatus($status);
         }
 
-        // PLUS DE LOGIQUE DE POSITION - Le frontend gère tout !
-        // On sauvegarde simplement les données reçues
-        $scene->setName($data['name']);
-        
-        // Description optionnelle
-        if (isset($data['description'])) {
-            $scene->setDescription($data['description']);
+        // La position n'est calculée qu'à la création : une édition de contenu
+        // (ou un autosave) ne doit jamais réordonner la séquence.
+        // Le réordonnancement passe par /scene/order, le déplacement par /scene/move.
+        if ($isNew) {
+            $afterScene = isset($data['afterSceneId'])
+                ? $this->sceneRepository->find($data['afterSceneId'])
+                : null;
+
+            // Pas de scène de référence : placer au début de la séquence
+            $position = $afterScene ? $afterScene->getPosition() + 1 : 1;
+
+            $this->shiftScenes($scene->getSequence(), $position);
+            $scene->setPosition($position);
         }
-        
-        $scene->setContent($data['content']);
-        
-        // Position calculée côté frontend
-        if (isset($data['position'])) {
-            $scene->setPosition($data['position']);
-        }
+
+        // Seuls les champs présents dans le payload sont écrits, pour qu'une
+        // sauvegarde partielle (ex. la note seule) n'efface pas le reste.
+        if (array_key_exists('name', $data))        $scene->setName($data['name']);
+        if (array_key_exists('description', $data)) $scene->setDescription($data['description']);
+        if (array_key_exists('content', $data))     $scene->setContent($data['content']);
 
         $em->persist($scene);
         $em->flush();
 
         return $scene;
+    }
+
+    /**
+     * Décale d'un cran toutes les scènes d'une séquence à partir d'une position.
+     */
+    private function shiftScenes(Sequence $sequence, int $startPosition): void
+    {
+        $scenes = $this->sceneRepository->findBy(
+            ['sequence' => $sequence],
+            ['position' => 'DESC'] // on traite d'abord les positions les plus élevées
+        );
+
+        foreach ($scenes as $scene) {
+            if ($scene->getPosition() >= $startPosition) {
+                $scene->setPosition($scene->getPosition() + 1);
+                $this->entityManager->persist($scene);
+            }
+        }
+
+        $this->entityManager->flush();
+    }
+
+    /**
+     * Retourne les positions courantes des scènes d'une séquence, triées.
+     * Permet au front de se resynchroniser sans recharger tout le projet.
+     *
+     * @return array<int, array{id: int, position: int}>
+     */
+    public function getPositions(Sequence $sequence): array
+    {
+        $scenes = $this->sceneRepository->findBy(['sequence' => $sequence], ['position' => 'ASC']);
+
+        return array_map(
+            fn (Scene $scene) => ['id' => $scene->getId(), 'position' => $scene->getPosition()],
+            $scenes
+        );
     }
 
 
@@ -81,17 +130,35 @@ class SceneService
     }
 
     /**
-     * Supprime une scène (sans réorganiser les positions - géré côté frontend).
+     * Supprime une scène et renumérote les scènes restantes de la séquence.
      */
-    public function delete(int $id): void
+    public function delete(int $id): Sequence
     {
         $scene = $this->sceneRepository->find($id);
         if (!$scene) {
             throw new \Exception('Scene non trouvée');
         }
 
-        // Supprimer la scène - Le frontend gère la réorganisation des positions
+        $sequence = $scene->getSequence();
+        $position = $scene->getPosition();
+
         $this->entityManager->remove($scene);
         $this->entityManager->flush();
+
+        // Combler le trou laissé par la scène supprimée
+        $scenes = $this->sceneRepository->findBy(
+            ['sequence' => $sequence],
+            ['position' => 'ASC']
+        );
+
+        foreach ($scenes as $remaining) {
+            if ($remaining->getPosition() > $position) {
+                $remaining->setPosition($remaining->getPosition() - 1);
+                $this->entityManager->persist($remaining);
+            }
+        }
+        $this->entityManager->flush();
+
+        return $sequence;
     }
 }
