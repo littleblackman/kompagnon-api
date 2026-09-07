@@ -45,6 +45,7 @@ class SequenceController extends AbstractController
     #[Route('/api/sequence/{id}/analyse/alignment', name: 'api_sequence_analyse_alignment', methods: ['POST'])]
     public function analyseAlignment(
         int $id,
+        Request $request,
         SequenceRepository $sequenceRepository,
         SequenceAnalyseService $analyseService
     ): JsonResponse {
@@ -53,7 +54,8 @@ class SequenceController extends AbstractController
             return $this->json(['success' => false, 'message' => 'Séquence non trouvée'], 404);
         }
 
-        $result = $analyseService->analyseAlignment($sequence);
+        // ?field=intention|aesthetic|information pour n'analyser qu'une ligne
+        $result = $analyseService->analyseAlignment($sequence, $request->query->get('field'));
 
         // 422 : la requête est valide, c'est la séquence qui n'est pas analysable
         return $this->json($result, $result['success'] ? 200 : 422);

@@ -79,7 +79,7 @@ class SequenceAnalyseService
      *
      * @return array{success: bool, message?: string, analysis?: array}
      */
-    public function analyseAlignment(Sequence $sequence): array
+    public function analyseAlignment(Sequence $sequence, ?string $only = null): array
     {
         $content = $this->extractContent($sequence);
 
@@ -96,11 +96,21 @@ class SequenceAnalyseService
             'information' => $sequence->getInformation(),
         ];
 
+        // Analyse ciblée : un bouton par ligne n'interroge que sa ligne
+        if ($only !== null) {
+            if (!array_key_exists($only, $fields)) {
+                return ['success' => false, 'message' => 'Champ inconnu : ' . $only];
+            }
+            $fields = [$only => $fields[$only]];
+        }
+
         $declared = array_filter($fields, fn ($v) => trim((string) $v) !== '');
         if (!$declared) {
             return [
                 'success' => false,
-                'message' => 'Renseignez au moins une intention, une idée esthétique ou une information.',
+                'message' => $only !== null
+                    ? 'Ce champ est vide : il n\'y a rien à confronter au texte.'
+                    : 'Renseignez au moins une intention, une idée esthétique ou une information.',
             ];
         }
 
