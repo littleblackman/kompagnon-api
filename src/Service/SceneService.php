@@ -96,6 +96,67 @@ class SceneService
     }
 
     /**
+     * Déplace une scène vers une autre séquence (ou la repositionne dans la sienne).
+     *
+     * Endpoint dédié plutôt qu'une surcharge de createOrUpdate : toucher deux
+     * conteneurs est une autre sémantique, et on évite de fragiliser le chemin
+     * de sauvegarde le plus emprunté.
+     *
+     * @return array{source: Sequence, target: Sequence}
+     */
+    public function moveToSequence(int $sceneId, int $targetSequenceId, ?int $afterSceneId = null): array
+    {
+        $scene = $this->sceneRepository->find($sceneId);
+        if (!$scene) {
+            throw new \Exception('Scène non trouvée');
+        }
+
+        $target = $this->sequenceRepository->find($targetSequenceId);
+        if (!$target) {
+            throw new \Exception('Séquence cible non trouvée');
+        }
+
+        if ($afterSceneId === $sceneId) {
+            throw new \Exception('Une scène ne peut pas être insérée après elle-même');
+        }
+
+        $source = $scene->getSequence();
+        $sourcePosition = $scene->getPosition();
+
+        // 1. Mettre la scène hors jeu (position 0) pour qu'elle n'interfère ni
+        //    avec le compactage de la source ni avec le décalage de la cible,
+        //    y compris quand les deux séquences sont la même.
+        $scene->setPosition(0);
+        $this->entityManager->persist($scene);
+        $this->entityManager->flush();
+
+        // 2. Combler le trou laissé dans la séquence d'origine
+        $sourceScenes = $this->sceneRepository->findBy(['sequence' => $source], ['position' => 'ASC']);
+        foreach ($sourceScenes as $other) {
+            if ($other->getId() !== $sceneId && $other->getPosition() > $sourcePosition) {
+                $other->setPosition($other->getPosition() - 1);
+                $this->entityManager->persist($other);
+            }
+        }
+        $this->entityManager->flush();
+
+        // 3. Position dans la cible, calculée après compactage donc à jour
+        $afterScene = $afterSceneId ? $this->sceneRepository->find($afterSceneId) : null;
+        $position = ($afterScene && $afterScene->getSequence()->getId() === $target->getId())
+            ? $afterScene->getPosition() + 1
+            : 1;
+
+        // 4. Décaler la cible puis poser la scène
+        $this->shiftScenes($target, $position);
+        $scene->setSequence($target);
+        $scene->setPosition($position);
+        $this->entityManager->persist($scene);
+        $this->entityManager->flush();
+
+        return ['source' => $source, 'target' => $target];
+    }
+
+    /**
      * Retourne les positions courantes des scènes d'une séquence, triées.
      * Permet au front de se resynchroniser sans recharger tout le projet.
      *
