@@ -36,6 +36,16 @@ class Scene
     #[Groups(['scene:read', 'scene:write', 'sequence:read'])]
     private string $content;
 
+    /**
+     * Note de travail sur la scène (« à retravailler », « vérifier la
+     * chronologie »). Le groupe sequence:read est indispensable : sans lui la
+     * note serait enregistrée mais jamais renvoyée par GET /project/{slug},
+     * où les scènes sont sérialisées comme sous-collection de Sequence.
+     */
+    #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(['scene:read', 'scene:write', 'sequence:read'])]
+    private ?string $notes = null;
+
     #[ORM\ManyToOne(targetEntity: Sequence::class, inversedBy: 'scenes')]
     #[Groups(['scene:write'])]
     private Sequence $sequence;
@@ -67,6 +77,16 @@ class Scene
     public function setDescription(?string $description): void
     {
         $this->description = $description;
+    }
+
+    public function getNotes(): ?string
+    {
+        return $this->notes;
+    }
+
+    public function setNotes(?string $notes): void
+    {
+        $this->notes = $notes;
     }
 
     public function getContent(): string

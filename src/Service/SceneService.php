@@ -68,6 +68,8 @@ class SceneService
         if (array_key_exists('name', $data))        $scene->setName($data['name']);
         if (array_key_exists('description', $data)) $scene->setDescription($data['description']);
         if (array_key_exists('content', $data))     $scene->setContent($data['content']);
+        // Chaîne vide ramenée à null : une note effacée est une note absente
+        if (array_key_exists('notes', $data))       $scene->setNotes($data['notes'] ?: null);
 
         $em->persist($scene);
         $em->flush();
