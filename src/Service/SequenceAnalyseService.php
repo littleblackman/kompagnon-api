@@ -153,8 +153,12 @@ PROMPT;
 
         try {
             $response = $this->iaConnection->getTextResponse($systemPrompt, $userMessage, [
+                'profile' => IAConnectionService::PROFILE_FAST, // lancée séquence par séquence
                 'temperature' => 0.2, // un verdict doit être stable d'un appel à l'autre
-                'max_tokens' => 700,
+                // Le modèle léger déborde souvent de la phrase demandée : un
+                // JSON coupé net par max_tokens devient inexploitable
+                'max_tokens' => 1200,
+                'response_format' => ['type' => 'json_object'],
             ]);
         } catch (\Exception $e) {
             return ['success' => false, 'message' => $e->getMessage()];
@@ -241,8 +245,10 @@ PROMPT;
 
         try {
             $response = $this->iaConnection->getTextResponse($systemPrompt, $userMessage, [
+                'profile' => IAConnectionService::PROFILE_FAST, // lancée séquence par séquence
                 'temperature' => 0.3,
-                'max_tokens' => 1200,
+                'max_tokens' => 1500,
+                'response_format' => ['type' => 'json_object'],
             ]);
         } catch (\Exception $e) {
             return ['success' => false, 'message' => $e->getMessage()];
@@ -283,5 +289,96 @@ PROMPT;
         }
 
         return ['success' => true, 'ratings' => $suggested];
+    }
+
+    /** Longueur des colonnes intention / aesthetic_idea / information */
+    private const FIELD_MAX_LENGTH = 255;
+
+    /**
+     * Coupe au dernier mot entier qui tient dans la colonne, plutôt que de
+     * laisser la base tronquer en plein mot.
+     */
+    private function fitField(string $text): string
+    {
+        $text = trim(preg_replace('/\s+/', ' ', strip_tags($text)));
+        if (mb_strlen($text) <= self::FIELD_MAX_LENGTH) {
+            return $text;
+        }
+
+        $cut = mb_substr($text, 0, self::FIELD_MAX_LENGTH - 1);
+        $space = mb_strrpos($cut, ' ');
+
+        return rtrim($space !== false ? mb_substr($cut, 0, $space) : $cut, " ,;:") . '…';
+    }
+
+    /**
+     * Propose une rédaction de l'intention, de l'idée esthétique et de
+     * l'information, tirée de ce que le texte fait réellement. Rien n'est
+     * enregistré : l'auteur reprend, retouche ou ignore.
+     *
+     * @return array{success: bool, message?: string, fields?: array}
+     */
+    public function suggestFields(Sequence $sequence): array
+    {
+        $content = $this->extractContent($sequence);
+
+        if ($content === '') {
+            return [
+                'success' => false,
+                'message' => 'Cette séquence ne contient aucun texte à analyser.',
+            ];
+        }
+
+        $systemPrompt = <<<'PROMPT'
+Tu es un dramaturge qui aide un auteur à tenir ses notes de travail. On te donne
+le texte d'une séquence.
+
+Ta seule tâche : rédiger trois notes courtes qui décrivent ce que la séquence
+fait, comme l'auteur les écrirait dans son carnet.
+
+- intention : l'émotion ou la sensation que la séquence produit chez le lecteur.
+- aesthetic : l'approche artistique — rythme, point de vue, registre, images,
+  traitement du temps ou de l'espace.
+- information : ce que le lecteur apprend de nouveau sur l'histoire ou les
+  personnages.
+
+Règles :
+- Décris ce qui est écrit, pas ce que la séquence pourrait devenir.
+- Pas de jugement de valeur, pas de conseil : ce sont des notes, pas une critique.
+- Une phrase par note, 200 caractères au plus, sans guillemets autour.
+- Écris en français, au présent.
+- Réponds uniquement par un objet JSON, sans texte autour.
+
+Format exact :
+{"intention": "...", "aesthetic": "...", "information": "..."}
+PROMPT;
+
+        $userMessage = "SÉQUENCE : " . $sequence->getName() . "\n\nTEXTE :\n" . $content;
+
+        try {
+            $response = $this->iaConnection->getTextResponse($systemPrompt, $userMessage, [
+                'profile' => IAConnectionService::PROFILE_FAST, // lancée séquence par séquence
+                'temperature' => 0.5, // une rédaction gagne à varier d'un appel à l'autre
+                // Même marge que les deux autres analyses : un JSON coupé est perdu
+                'max_tokens' => 1000,
+                'response_format' => ['type' => 'json_object'],
+            ]);
+        } catch (\Exception $e) {
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
+
+        $parsed = $this->parseJson($response);
+        $fields = [];
+
+        foreach (['intention', 'aesthetic', 'information'] as $key) {
+            $value = is_string($parsed[$key] ?? null) ? $this->fitField($parsed[$key]) : '';
+            $fields[$key] = $value !== '' ? $value : null;
+        }
+
+        if (!array_filter($fields)) {
+            return ['success' => false, 'message' => 'Réponse du modèle inexploitable.'];
+        }
+
+        return ['success' => true, 'fields' => $fields];
     }
 }

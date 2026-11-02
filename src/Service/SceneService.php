@@ -70,6 +70,13 @@ class SceneService
         if (array_key_exists('content', $data))     $scene->setContent($data['content']);
         // Chaîne vide ramenée à null : une note effacée est une note absente
         if (array_key_exists('notes', $data))       $scene->setNotes($data['notes'] ?: null);
+        if (!empty($data['status_id'])) {
+            $status = $this->statusRepository->find($data['status_id']);
+            if (!$status) {
+                throw new \Exception('Statut non trouvé');
+            }
+            $scene->setStatus($status);
+        }
 
         $em->persist($scene);
         $em->flush();

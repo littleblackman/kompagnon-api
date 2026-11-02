@@ -4,10 +4,12 @@ namespace App\Service;
 
 use App\Entity\Personnage;
 use App\Entity\PersonnageDramaticFunction;
+use App\Entity\PersonnageLanguageLevel;
 use App\Entity\SequencePersonnage;
 use App\Repository\ProjectRepository;
 use App\Repository\PersonnageRepository;
 use App\Repository\DramaticFunctionRepository;
+use App\Repository\LanguageLevelRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Repository\SequencePersonnageRepository;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -25,7 +27,8 @@ class PersonnageService
         PersonnageRepository $personnageRepository,
         DramaticFunctionRepository $dramaticFunctionRepository,
         EntityManagerInterface $em,
-        SequencePersonnageRepository $sequencePersonnageRepository
+        SequencePersonnageRepository $sequencePersonnageRepository,
+        private LanguageLevelRepository $languageLevelRepository
     )
     {
         $this->projectRepository = $projectRepository;
@@ -56,16 +59,22 @@ class PersonnageService
         $this->em->persist($personnage);
         $this->em->flush();
 
-        // Gérer les dramatic functions
+        // Fonctions dramatiques : mise à jour en place. Tout supprimer puis
+        // recréer effaçait les séquences où l'analyse les a vues jouées.
         if (isset($data['dramaticFunctionIds']) && is_array($data['dramaticFunctionIds'])) {
-            // Supprimer les anciennes relations
-            foreach ($personnage->getPersonnageDramaticFunctions() as $pdf) {
+            $wanted = array_flip(array_map('intval', $data['dramaticFunctionIds']));
+
+            foreach ($personnage->getPersonnageDramaticFunctions()->toArray() as $pdf) {
+                $id = $pdf->getDramaticFunction()->getId();
+                if (isset($wanted[$id])) {
+                    unset($wanted[$id]);
+                    continue;
+                }
+                $personnage->getPersonnageDramaticFunctions()->removeElement($pdf);
                 $this->em->remove($pdf);
             }
-            $this->em->flush();
 
-            // Créer les nouvelles relations
-            foreach ($data['dramaticFunctionIds'] as $functionId) {
+            foreach (array_keys($wanted) as $functionId) {
                 $dramaticFunction = $this->dramaticFunctionRepository->find($functionId);
                 if ($dramaticFunction) {
                     $pdf = new PersonnageDramaticFunction();
@@ -79,6 +88,8 @@ class PersonnageService
             }
             $this->em->flush();
         }
+
+        // Les niveaux de langage ne se saisissent plus : l'analyse les écrit
 
 
         // is sequenceId is set, create or update the link with SequencePersonnage
@@ -120,15 +131,68 @@ class PersonnageService
             ->setLastName($data['lastName'] ?? $personnage->getLastName() ?? '')
             ->setBackground($data['background'] ?? $personnage->getBackground() ?? '')
             ->setAge($data['age'] ?? $personnage->getAge())
-            ->setOrigin($data['origin'] ?? $personnage->getOrigin() ?? '')
             ->setAvatar($data['avatar'] ?? $personnage->getAvatar() ?? '')
             ->setLevel($data['level'] ?? $personnage->getLevel())
-            ->setAnalysis($data['analysis'] ?? $personnage->getAnalysis() ?? '')
             ->setStrength($data['strength'] ?? $personnage->getStrength() ?? '')
             ->setWeakness($data['weakness'] ?? $personnage->getWeakness() ?? '')
             ->setUpdatedAt(new \DateTimeImmutable());
 
+        // Analyse du texte, langage, vérification : écrits par
+        // PersonnageAnalyseService seul, jamais par la saisie de la fiche
+
         return $personnage;
+    }
+
+    /**
+     * Aligne les niveaux de langage du personnage sur la liste reçue, celle
+     * que rend l'analyse (PersonnageAnalyseService).
+     *
+     * Mise à jour en place plutôt que « tout supprimer puis recréer » :
+     * Doctrine insère avant de supprimer, ce qui heurterait la contrainte
+     * d'unicité personnage × niveau.
+     *
+     * @param array<int, array{languageLevelId: int, weight?: int, comment?: ?string, quote?: ?string}> $levels
+     */
+    public function syncLanguageLevels(Personnage $personnage, array $levels): void
+    {
+        $wanted = [];
+        foreach ($levels as $entry) {
+            $id = is_numeric($entry['languageLevelId'] ?? null) ? (int) $entry['languageLevelId'] : null;
+            if ($id !== null) {
+                $wanted[$id] = $entry;
+            }
+        }
+
+        foreach ($personnage->getPersonnageLanguageLevels()->toArray() as $link) {
+            $id = $link->getLanguageLevel()->getId();
+            if (!isset($wanted[$id])) {
+                $personnage->removePersonnageLanguageLevel($link);
+                continue;
+            }
+            $link->setWeight((int) ($wanted[$id]['weight'] ?? $link->getWeight()))
+                ->setComment(trim((string) ($wanted[$id]['comment'] ?? '')) ?: null);
+            // La réplique n'est pas saisie à la main : on garde l'ancienne si rien n'arrive
+            if (array_key_exists('quote', $wanted[$id])) {
+                $link->setQuote(trim((string) $wanted[$id]['quote']) ?: null);
+            }
+            unset($wanted[$id]);
+        }
+
+        foreach ($wanted as $id => $entry) {
+            $languageLevel = $this->languageLevelRepository->find($id);
+            if (!$languageLevel) {
+                continue;
+            }
+            $link = (new PersonnageLanguageLevel())
+                ->setLanguageLevel($languageLevel)
+                ->setWeight((int) ($entry['weight'] ?? 50))
+                ->setComment(trim((string) ($entry['comment'] ?? '')) ?: null)
+                ->setQuote(trim((string) ($entry['quote'] ?? '')) ?: null);
+            $personnage->addPersonnageLanguageLevel($link);
+            $this->em->persist($link);
+        }
+
+        $this->em->flush();
     }
 
     public function getPersonnagesByProject(int $projectId): array
@@ -279,6 +343,15 @@ class PersonnageService
                 ],
                 'weight' => $pdf->getWeight(),
                 'comment' => $pdf->getComment(),
+                // Où le texte la joue, d'après la dernière vérification
+                'fromSequence' => $pdf->getFromSequence() ? [
+                    'id' => $pdf->getFromSequence()->getId(),
+                    'name' => $pdf->getFromSequence()->getName(),
+                ] : null,
+                'toSequence' => $pdf->getToSequence() ? [
+                    'id' => $pdf->getToSequence()->getId(),
+                    'name' => $pdf->getToSequence()->getName(),
+                ] : null,
             ];
         }
 
@@ -321,10 +394,17 @@ class PersonnageService
             'strength' => $personnage->getStrength(),
             'weakness' => $personnage->getWeakness(),
             'analysis' => $personnage->getAnalysis(),
+            'languageAnalysis' => $personnage->getLanguageAnalysis(),
+            'verification' => $personnage->getVerification(),
             'images' => $personnage->getImagesArray(),
             'avatar' => $personnage->getImagesArray()[0] ?? null,
             'personnageDramaticFunctions' => $dramaticFunctions,
             'personnageNarrativeArcs' => $narrativeArcs,
+            'personnageLanguageLevels' => array_values(array_map(
+                fn (PersonnageLanguageLevel $link) => $link->toArray(),
+                $personnage->getPersonnageLanguageLevels()->toArray()
+            )),
+            'actantialSchema' => $personnage->getGlobalActantialSchema()?->toArray(),
             'project' => [
                 'id' => $project?->getId(),
                 'name' => $project?->getName(),

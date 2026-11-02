@@ -31,73 +31,136 @@ class ProjectAnalyseService
     }
 
     /**
+     * Budget de caractères envoyé au modèle. Le texte complet d'un roman le
+     * dépasse de loin : on garde toute la structure et on répartit le reste
+     * entre les scènes, pour que l'IA lise le livre entier et pas son incipit.
+     */
+    private const CONTENT_BUDGET = 60000;
+
+    /** En dessous, un extrait de scène ne dit plus rien du texte */
+    private const MIN_SCENE_EXCERPT = 300;
+
+    /**
      * Extrait le contenu organisationnel d'un projet
-     * (descriptions des parties et séquences)
+     * (descriptions et intentions des parties et séquences)
      */
     public function extractOrganizationalContent(Project $project): string
     {
-        $content = "# " . $project->getName() . "\n\n";
-
-        if ($project->getDescription()) {
-            $content .= strip_tags($project->getDescription()) . "\n\n";
-        }
-
-        foreach ($project->getParts() as $part) {
-            $content .= "## " . $part->getName() . "\n";
-
-            if ($part->getDescription()) {
-                $content .= strip_tags($part->getDescription()) . "\n\n";
-            }
-
-            foreach ($part->getSequences() as $sequence) {
-                $content .= "### " . $sequence->getName() . "\n";
-
-                if ($sequence->getDescription()) {
-                    $content .= strip_tags($sequence->getDescription()) . "\n\n";
-                }
-            }
-        }
-
-        return $content;
+        return $this->buildContent($project, false);
     }
 
     /**
-     * Extrait le contenu complet d'un projet
-     * (descriptions + contenu des scènes)
+     * Extrait le contenu complet d'un projet : la structure, plus un extrait
+     * de chaque scène dimensionné pour tenir dans le budget
      */
     public function extractFullContent(Project $project): string
     {
-        $content = "# " . $project->getName() . "\n\n";
+        return $this->buildContent($project, true);
+    }
 
-        if ($project->getDescription()) {
-            $content .= strip_tags($project->getDescription()) . "\n\n";
+    private function buildContent(Project $project, bool $withScenes): string
+    {
+        $outline = $this->buildOutline($project);
+        if (!$withScenes) {
+            return $this->truncate(implode('', array_map(fn ($block) => $block['text'], $outline)), self::CONTENT_BUDGET);
         }
+
+        $outlineLength = array_sum(array_map(fn ($block) => mb_strlen($block['text']), $outline));
+        $sceneCount = array_sum(array_map(fn ($block) => count($block['scenes']), $outline));
+
+        // La structure passe en entier ; ce qui reste se partage entre les scènes
+        $perScene = $sceneCount
+            ? max(self::MIN_SCENE_EXCERPT, intdiv(max(0, self::CONTENT_BUDGET - $outlineLength), $sceneCount))
+            : 0;
+
+        $content = '';
+        foreach ($outline as $block) {
+            $content .= $block['text'];
+            foreach ($block['scenes'] as $scene) {
+                $text = $this->cleanText($scene->getContent());
+                if ($text === '') {
+                    continue;
+                }
+                $content .= '#### ' . $scene->getName() . "\n" . $this->excerpt($text, $perScene) . "\n\n";
+            }
+        }
+
+        return $this->truncate($content, self::CONTENT_BUDGET * 2);
+    }
+
+    /**
+     * Le plan du projet, séquence par séquence, avec les scènes à extraire
+     *
+     * @return array<int, array{text: string, scenes: array}>
+     */
+    private function buildOutline(Project $project): array
+    {
+        $blocks = [];
+        $head = '# ' . $project->getName() . "\n\n";
+        if ($project->getDescription()) {
+            $head .= $this->cleanText($project->getDescription()) . "\n\n";
+        }
+        $blocks[] = ['text' => $head, 'scenes' => []];
 
         foreach ($project->getParts() as $part) {
-            $content .= "## " . $part->getName() . "\n";
-
+            $text = '## ' . $part->getName() . "\n";
             if ($part->getDescription()) {
-                $content .= strip_tags($part->getDescription()) . "\n\n";
+                $text .= $this->cleanText($part->getDescription()) . "\n\n";
             }
+            $blocks[] = ['text' => $text, 'scenes' => []];
 
             foreach ($part->getSequences() as $sequence) {
-                $content .= "### " . $sequence->getName() . "\n";
-
-                if ($sequence->getDescription()) {
-                    $content .= strip_tags($sequence->getDescription()) . "\n\n";
-                }
-
-                foreach ($sequence->getScenes() as $scene) {
-                    $content .= "#### " . $scene->getName() . "\n";
-
-                    if ($scene->getContent()) {
-                        $content .= strip_tags($scene->getContent()) . "\n\n";
+                $text = '### ' . $sequence->getName() . "\n";
+                foreach ([
+                    'Description' => $sequence->getDescription(),
+                    'Intention' => $sequence->getIntention(),
+                    'Information' => $sequence->getInformation(),
+                ] as $label => $value) {
+                    if ($value && ($clean = $this->cleanText($value)) !== '') {
+                        $text .= $label . ' : ' . $clean . "\n";
                     }
                 }
+                $blocks[] = ['text' => $text . "\n", 'scenes' => $sequence->getScenes()->toArray()];
             }
         }
 
-        return $content;
+        return $blocks;
+    }
+
+    /** HTML de TinyMCE → texte brut, entités décodées et espaces resserrés */
+    private function cleanText(?string $html): string
+    {
+        // Une fin de paragraphe vaut un espace, sinon « …y va.</p><p>Le petit » se colle
+        $html = preg_replace('#<br\s*/?>|</(p|div|li|h[1-6])>#i', ' ', (string) $html);
+        $text = html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        return trim(preg_replace('/\s+/u', ' ', $text));
+    }
+
+    /**
+     * Début et fin de la scène : l'ouverture pose la situation, la chute dit
+     * où elle mène. Le milieu est élidé.
+     */
+    private function excerpt(string $text, int $length): string
+    {
+        if (mb_strlen($text) <= $length) {
+            return $text;
+        }
+
+        $head = (int) round($length * 0.6);
+        $tail = $length - $head;
+
+        return mb_substr($text, 0, $head) . ' […] ' . mb_substr($text, -$tail);
+    }
+
+    /** Coupe en caractères, jamais au milieu d'un caractère multi-octets */
+    private function truncate(string $content, int $length): string
+    {
+        if (mb_strlen($content) <= $length) {
+            return $content;
+        }
+
+        return mb_substr($content, 0, $length) . "\n\n[...contenu tronqué...]";
     }
 
     /**
@@ -114,11 +177,6 @@ class ProjectAnalyseService
             $content = $useFullContent
                 ? $this->extractFullContent($project)
                 : $this->extractOrganizationalContent($project);
-
-            // Limiter la longueur si nécessaire (Mistral a une limite de tokens)
-            if (strlen($content) > 15000) {
-                $content = substr($content, 0, 15000) . "\n\n[...contenu tronqué...]";
-            }
 
             // Récupérer les genres, sous-genres et structures disponibles
             $availableGenres = $this->genreRepository->findAll();
@@ -160,6 +218,8 @@ Réponds au format JSON suivant :
             $userMessage = "Analyse ce contenu et détermine le genre, sous-genre et structure narrative :\n\n" . $content;
 
             $response = $this->iaConnection->getTextResponse($systemPrompt, $userMessage, [
+                // Rare et structurant pour le projet : on paie la réflexion
+                'profile' => IAConnectionService::PROFILE_DEEP,
                 'temperature' => 0.3, // Basse température pour plus de cohérence
                 'max_tokens' => 800
             ]);

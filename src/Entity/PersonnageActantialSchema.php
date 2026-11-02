@@ -12,7 +12,7 @@ class PersonnageActantialSchema
     #[ORM\Id, ORM\GeneratedValue, ORM\Column(type: 'integer')]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(targetEntity: Personnage::class)]
+    #[ORM\ManyToOne(targetEntity: Personnage::class, inversedBy: 'actantialSchemas')]
     #[ORM\JoinColumn(nullable: false)]
     private Personnage $personnage;
 
@@ -25,44 +25,29 @@ class PersonnageActantialSchema
     private ?Sequence $toSequence = null;
 
     /**
-     * Structure JSON des rôles actantiels :
+     * Structure JSON des rôles actantiels, indexée par rôle. Un actant peut
+     * être tenu par plusieurs entités ; personnage_id est renseigné quand
+     * l'entité est un personnage du projet :
      * {
      *   "Sujet": {
      *     "role": "Sujet",
-     *     "concerned_name": "Harry Potter", 
-     *     "concerned_personnage_id": 1,
-     *     "comment": "Héros principal de l'histoire"
-     *   },
-     *   "Objet": {
-     *     "role": "Objet",
-     *     "concerned_name": "Pierre Philosophale",
-     *     "concerned_personnage_id": null,
-     *     "comment": "Objectif à atteindre"
+     *     "concerned": [{"name": "Harry Potter", "personnage_id": 1}],
+     *     "comment": "Veut découvrir ce que cache le troisième étage"
      *   },
      *   "Adjuvant": {
-     *     "role": "Adjuvant", 
-     *     "concerned_name": "Hermione",
-     *     "concerned_personnage_id": 2,
+     *     "role": "Adjuvant",
+     *     "concerned": [
+     *       {"name": "Hermione", "personnage_id": 2},
+     *       {"name": "Ron", "personnage_id": 5}
+     *     ],
      *     "comment": "Aide précieuse"
-     *   },
-     *   "Opposant": {
-     *     "role": "Opposant",
-     *     "concerned_name": "Voldemort",
-     *     "concerned_personnage_id": 3,
-     *     "comment": null
-     *   },
-     *   "Destinateur": {
-     *     "role": "Destinateur",
-     *     "concerned_name": "Dumbledore",
-     *     "concerned_personnage_id": 4,
-     *     "comment": "Celui qui envoie en mission"
      *   },
      *   "Destinataire": {
      *     "role": "Destinataire",
-     *     "concerned_name": "Le monde magique",
-     *     "concerned_personnage_id": null,
-     *     "comment": "Bénéficiaire de l'action"
-     *   }
+     *     "concerned": [{"name": "Le monde magique", "personnage_id": null}],
+     *     "comment": null
+     *   },
+     *   ...
      * }
      */
     #[ORM\Column(type: 'json')]
@@ -122,21 +107,19 @@ class PersonnageActantialSchema
 
     /**
      * Ajoute ou met à jour un rôle actantiel
-     * 
+     *
      * @param string $role Le rôle (Sujet, Objet, Adjuvant, Opposant, Destinateur, Destinataire)
-     * @param string $concernedName Le nom de la personne/lieu/chose concerné
-     * @param int|null $concernedPersonnageId L'ID du personnage si c'est un personnage
+     * @param array $concerned Liste de ['name' => string, 'personnage_id' => ?int]
      * @param string|null $comment Commentaire optionnel
      */
-    public function setActantialRole(string $role, string $concernedName, ?int $concernedPersonnageId = null, ?string $comment = null): self
+    public function setActantialRole(string $role, array $concerned, ?string $comment = null): self
     {
         $this->actantialRoles[$role] = [
             'role' => $role,
-            'concerned_name' => $concernedName,
-            'concerned_personnage_id' => $concernedPersonnageId,
+            'concerned' => $concerned,
             'comment' => $comment
         ];
-        
+
         return $this;
     }
 
@@ -166,5 +149,17 @@ class PersonnageActantialSchema
     {
         $this->comment = $comment;
         return $this;
+    }
+
+    /**
+     * Forme exposée au front
+     */
+    public function toArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'roles' => $this->actantialRoles,
+            'comment' => $this->comment,
+        ];
     }
 }

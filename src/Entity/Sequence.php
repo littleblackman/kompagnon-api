@@ -47,6 +47,14 @@ class Sequence
     #[Groups(['sequence:read', 'sequence:write', 'part:read'])]
     private ?string $aesthetic_idea = null;
 
+    /**
+     * Lecture de la séquence par l'analyse de structure : beats relevés et
+     * résumé, avec l'empreinte du texte lu. Une séquence dont le texte n'a
+     * pas changé n'est pas relue. Hors groupes : servie par l'analyse.
+     */
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $structureReading = null;
+
     #[ORM\ManyToOne(targetEntity: Part::class, inversedBy: 'sequences')]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['sequence:read', 'sequence:write'])] // pas dans part:read, pour éviter la boucle
@@ -140,6 +148,17 @@ class Sequence
     public function setIntention(?string $intention): void
     {
         $this->intention = $intention;
+    }
+
+    public function getStructureReading(): ?array
+    {
+        return $this->structureReading;
+    }
+
+    public function setStructureReading(?array $structureReading): self
+    {
+        $this->structureReading = $structureReading;
+        return $this;
     }
 
     public function getAestheticIdea(): ?string

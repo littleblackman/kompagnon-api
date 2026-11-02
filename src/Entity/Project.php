@@ -60,6 +60,20 @@ class Project
     #[ORM\OneToMany(targetEntity: Personnage::class, mappedBy: 'project', cascade: ['persist', 'remove'])]
     private Collection $personnages;
 
+    /**
+     * Repères de la chronologie : année de référence (A0), jour zéro (J0) et
+     * son libellé. Hors groupes de sérialisation, servis par /timeline.
+     */
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $timelineSettings = null;
+
+    /**
+     * Dernière analyse de structure : le texte confronté à la structure et
+     * aux beats du sous-genre. Hors groupes, servie par l'analyse.
+     */
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $structureVerification = null;
+
     public function __construct()
     {
         $this->parts = new ArrayCollection();
@@ -153,6 +167,29 @@ class Project
                 $part->setProject(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getTimelineSettings(): array
+    {
+        return ($this->timelineSettings ?? []) + ['yearZero' => null, 'dayZero' => null, 'dayZeroLabel' => null];
+    }
+
+    public function getStructureVerification(): ?array
+    {
+        return $this->structureVerification;
+    }
+
+    public function setStructureVerification(?array $structureVerification): self
+    {
+        $this->structureVerification = $structureVerification;
+        return $this;
+    }
+
+    public function setTimelineSettings(?array $timelineSettings): self
+    {
+        $this->timelineSettings = $timelineSettings;
 
         return $this;
     }

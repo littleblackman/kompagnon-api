@@ -28,7 +28,8 @@ class Personnage
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     #[Groups(["personnage:read", "sequence:read", "part:read", "project:read"])]
-    private string $lastName;
+    // Nullable en base : un personnage peut n'avoir qu'un prénom
+    private ?string $lastName = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
     #[Groups(["personnage:read", "sequence:read", "part:read", "project:read"])]
@@ -37,10 +38,6 @@ class Personnage
     #[ORM\Column(type: 'integer', nullable: true)]
     #[Groups(["personnage:read", "sequence:read", "part:read", "project:read"])]
     private ?int $age = null;
-
-    #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    #[Groups(["personnage:read"])]
-    private ?string $origin = null;
 
     #[ORM\ManyToOne(targetEntity: Project::class, inversedBy: 'personnages')]
     #[ORM\JoinColumn(nullable: false)]
@@ -86,11 +83,36 @@ class Personnage
     #[Groups(["personnage:read", "project:read"])]
     private Collection $personnageNarrativeArcs;
 
+    // Pas de groupe de sérialisation : le schéma est servi par /details,
+    // inutile de l'embarquer dans le payload du projet
+    #[ORM\OneToMany(targetEntity: PersonnageActantialSchema::class, mappedBy: 'personnage', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    private Collection $actantialSchemas;
+
+    /** Comment parle le personnage : vocabulaire, syntaxe, tics, écarts selon l'interlocuteur */
+    #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(["personnage:read"])]
+    private ?string $languageAnalysis = null;
+
+    /**
+     * Dernière vérification du personnage contre le texte : verdicts sur ses
+     * arcs et ses fonctions dramatiques, ce qui est détecté hors fiche, écarts
+     * et pistes. Côté analyse, jamais renvoyée en entrée d'une analyse.
+     */
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $verification = null;
+
+    // Servis par /details, comme le schéma actantiel
+    #[ORM\OneToMany(targetEntity: PersonnageLanguageLevel::class, mappedBy: 'personnage', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[ORM\OrderBy(['weight' => 'DESC'])]
+    private Collection $personnageLanguageLevels;
+
     public function __construct()
     {
         $this->sequencePersonnages = new ArrayCollection();
         $this->personnageDramaticFunctions = new ArrayCollection();
         $this->personnageNarrativeArcs = new ArrayCollection();
+        $this->actantialSchemas = new ArrayCollection();
+        $this->personnageLanguageLevels = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -109,12 +131,12 @@ class Personnage
         return $this;
     }
 
-    public function getLastName(): string
+    public function getLastName(): ?string
     {
         return $this->lastName;
     }
 
-    public function setLastName(string $lastName): self
+    public function setLastName(?string $lastName): self
     {
         $this->lastName = $lastName;
         return $this;
@@ -196,17 +218,6 @@ class Personnage
     public function setAnalysis(?string $analysis): self
     {
         $this->analysis = $analysis;
-        return $this;
-    }
-
-    public function getOrigin(): ?string
-    {
-        return $this->origin;
-    }
-
-    public function setOrigin(?string $origin): self
-    {
-        $this->origin = $origin;
         return $this;
     }
 
@@ -360,6 +371,85 @@ class Personnage
     public function removePersonnageNarrativeArc(PersonnageNarrativeArc $personnageNarrativeArc): self
     {
         $this->personnageNarrativeArcs->removeElement($personnageNarrativeArc);
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PersonnageActantialSchema>
+     */
+    public function getActantialSchemas(): Collection
+    {
+        return $this->actantialSchemas;
+    }
+
+    /**
+     * Schéma couvrant tout le récit (sans bornes de séquences)
+     */
+    public function getGlobalActantialSchema(): ?PersonnageActantialSchema
+    {
+        foreach ($this->actantialSchemas as $schema) {
+            if ($schema->getFromSequence() === null && $schema->getToSequence() === null) {
+                return $schema;
+            }
+        }
+
+        return null;
+    }
+
+    public function getVerification(): ?array
+    {
+        return $this->verification;
+    }
+
+    public function setVerification(?array $verification): self
+    {
+        $this->verification = $verification;
+        return $this;
+    }
+
+    public function getLanguageAnalysis(): ?string
+    {
+        return $this->languageAnalysis;
+    }
+
+    public function setLanguageAnalysis(?string $languageAnalysis): self
+    {
+        $this->languageAnalysis = $languageAnalysis;
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PersonnageLanguageLevel>
+     */
+    public function getPersonnageLanguageLevels(): Collection
+    {
+        return $this->personnageLanguageLevels;
+    }
+
+    public function addPersonnageLanguageLevel(PersonnageLanguageLevel $level): self
+    {
+        if (!$this->personnageLanguageLevels->contains($level)) {
+            $this->personnageLanguageLevels->add($level);
+            $level->setPersonnage($this);
+        }
+
+        return $this;
+    }
+
+    public function removePersonnageLanguageLevel(PersonnageLanguageLevel $level): self
+    {
+        $this->personnageLanguageLevels->removeElement($level);
+
+        return $this;
+    }
+
+    public function addActantialSchema(PersonnageActantialSchema $schema): self
+    {
+        if (!$this->actantialSchemas->contains($schema)) {
+            $this->actantialSchemas->add($schema);
+            $schema->setPersonnage($this);
+        }
 
         return $this;
     }

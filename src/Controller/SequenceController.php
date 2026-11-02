@@ -81,6 +81,26 @@ class SequenceController extends AbstractController
         return $this->json($result, $result['success'] ? 200 : 422);
     }
 
+    /**
+     * Rédaction proposée pour l'intention, l'idée esthétique et l'information,
+     * d'après le texte écrit. Rien n'est enregistré.
+     */
+    #[Route('/api/sequence/{id}/analyse/fields', name: 'api_sequence_analyse_fields', methods: ['POST'])]
+    public function analyseFields(
+        int $id,
+        SequenceRepository $sequenceRepository,
+        SequenceAnalyseService $analyseService
+    ): JsonResponse {
+        $sequence = $sequenceRepository->find($id);
+        if (!$sequence) {
+            return $this->json(['success' => false, 'message' => 'Séquence non trouvée'], 404);
+        }
+
+        $result = $analyseService->suggestFields($sequence);
+
+        return $this->json($result, $result['success'] ? 200 : 422);
+    }
+
     #[Route('/api/sequence/order', name: 'api_sequence_order', methods: ['POST'])]
     public function updateSequenceOrder(SequenceService $sequenceService, Request $request): JsonResponse
     {

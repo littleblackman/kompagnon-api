@@ -7,6 +7,7 @@ use App\Repository\StatusRepository;
 use App\Repository\TypeRepository;
 use App\Repository\NarrativeArcRepository;
 use App\Repository\DramaticFunctionRepository;
+use App\Repository\LanguageLevelRepository;
 use App\Repository\GenreRepository;
 use App\Repository\SubgenreRepository;
 use App\Repository\EventRepository;
@@ -31,6 +32,7 @@ class MetadataController extends AbstractController
         TypeRepository $typeRepository,
         NarrativeArcRepository $narrativeArcRepository,
         DramaticFunctionRepository $dramaticFunctionRepository,
+        LanguageLevelRepository $languageLevelRepository,
         GenreRepository $genreRepository,
         SubgenreRepository $subgenreRepository,
         EventRepository $eventRepository,
@@ -58,6 +60,9 @@ class MetadataController extends AbstractController
         });
         $dramaticFunctions = $cache->get('dramatic_functions', function() use ($dramaticFunctionRepository) {
             return $dramaticFunctionRepository->findAll();
+        });
+        $languageLevels = $cache->get('language_levels', function() use ($languageLevelRepository) {
+            return $languageLevelRepository->findAllOrdered();
         });
 
         // Nouveaux: Workflow data - SANS CACHE pour debug
@@ -138,6 +143,7 @@ class MetadataController extends AbstractController
                'types' => $types,
                'narrativeArcs' => $narrativeArcs,
                'dramaticFunctions' => $dramaticFunctions,
+               'languageLevels' => $languageLevels,
                'actantialSchema' => $actantialSchema,
                'genres' => $genres,
                'subgenres' => $subgenres,
@@ -151,7 +157,7 @@ class MetadataController extends AbstractController
            ],
            200,
            [],
-           ['groups' => ['metadata_read', 'narrative_arc:read', 'dramatic_function:read', 'genre:read', 'subgenre:read', 'event:read', 'event_type:read', 'narrative_part:read', 'narrative_structure:read']]
+           ['groups' => ['metadata_read', 'narrative_arc:read', 'dramatic_function:read', 'language_level:read', 'genre:read', 'subgenre:read', 'event:read', 'event_type:read', 'narrative_part:read', 'narrative_structure:read']]
        );
     }
 }
