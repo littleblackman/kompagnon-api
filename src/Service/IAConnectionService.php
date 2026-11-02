@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\Entity\ErrorLog;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Component\HttpClient\Exception\TransportException;
 
@@ -40,25 +41,37 @@ class IAConnectionService
     /** @var array<string, array{model: string, reasoning: bool}> */
     private array $profiles;
 
-    public function __construct(HttpClientInterface $httpClient)
+    public function __construct(HttpClientInterface $httpClient, private ErrorLogger $errorLogger)
     {
         $this->httpClient = $httpClient;
 
         // Configuration Mistral API
-        $this->apiKey = $_ENV['MISTRAL_API_KEY'] ?? '';
-        $this->apiUrl = $_ENV['MISTRAL_API_URL'] ?? 'https://api.mistral.ai/v1/chat/completions';
+        $this->apiKey = $this->env('MISTRAL_API_KEY') ?? '';
+        $this->apiUrl = $this->env('MISTRAL_API_URL') ?? 'https://api.mistral.ai/v1/chat/completions';
 
         // MISTRAL_MODEL reste accepté pour deep, c'était l'unique réglage avant les profils
         $this->profiles = [
             self::PROFILE_FAST => [
-                'model' => $_ENV['MISTRAL_MODEL_FAST'] ?? 'ministral-14b-latest',
+                'model' => $this->env('MISTRAL_MODEL_FAST') ?? 'ministral-14b-latest',
                 'reasoning' => false,
             ],
             self::PROFILE_DEEP => [
-                'model' => $_ENV['MISTRAL_MODEL_DEEP'] ?? $_ENV['MISTRAL_MODEL'] ?? 'mistral-large-4',
-                'reasoning' => filter_var($_ENV['MISTRAL_MODEL_DEEP_REASONING'] ?? true, FILTER_VALIDATE_BOOLEAN),
+                'model' => $this->env('MISTRAL_MODEL_DEEP') ?? $this->env('MISTRAL_MODEL') ?? 'mistral-large-4',
+                'reasoning' => filter_var($this->env('MISTRAL_MODEL_DEEP_REASONING') ?? true, FILTER_VALIDATE_BOOLEAN),
             ],
         ];
+    }
+
+    /**
+     * Une variable posée par le serveur (fastcgi_param, SetEnv) n'arrive pas
+     * dans $_ENV quand variables_order l'exclut, réglage courant en prod :
+     * on la cherche aussi dans $_SERVER et getenv().
+     */
+    private function env(string $name): ?string
+    {
+        $value = $_ENV[$name] ?? $_SERVER[$name] ?? getenv($name);
+
+        return is_string($value) && $value !== '' ? $value : null;
     }
 
     /**
@@ -71,6 +84,19 @@ class IAConnectionService
      * @throws \Exception Si la connexion échoue
      */
     public function sendRequest(string $systemPrompt, string $userMessage, array $options = []): array
+    {
+        $start = microtime(true);
+        try {
+            return $this->call($systemPrompt, $userMessage, $options);
+        } catch (\Exception $e) {
+            // Les appelants rendent l'échec en 422 : sans cette trace, une
+            // panne de l'IA (clé absente, quota, délai) ne laissait rien au journal
+            $this->logFailure($e->getMessage(), 'error', $options, $start);
+            throw $e;
+        }
+    }
+
+    private function call(string $systemPrompt, string $userMessage, array $options): array
     {
         if (empty($this->apiKey)) {
             throw new \Exception('MISTRAL_API_KEY n\'est pas configurée');
@@ -166,7 +192,13 @@ class IAConnectionService
      */
     public function getTextResponse(string $systemPrompt, string $userMessage, array $options = []): string
     {
+        $start = microtime(true);
         $response = $this->sendRequest($systemPrompt, $userMessage, $options);
+
+        // Réponse coupée faute de tokens : le JSON attendu derrière sera incomplet
+        if (($response['choices'][0]['finish_reason'] ?? null) === 'length') {
+            $this->logFailure('Réponse de l\'IA tronquée (max_tokens atteint)', 'warning', $options, $start, $response['usage'] ?? null);
+        }
 
         $content = $response['choices'][0]['message']['content'] ?? null;
 
@@ -188,7 +220,27 @@ class IAConnectionService
             }
         }
 
+        $this->logFailure('Format de réponse inattendu de l\'API', 'error', $options, $start);
         throw new \Exception('Format de réponse inattendu de l\'API');
+    }
+
+    private function logFailure(string $message, string $level, array $options, float $start, ?array $usage = null): void
+    {
+        $profile = $options['profile'] ?? self::PROFILE_FAST;
+
+        $this->errorLogger->log([
+            'source' => ErrorLog::SOURCE_API,
+            'level' => $level,
+            'message' => $message,
+            // Regroupe les échecs IA entre eux, quelle que soit la route
+            'file' => 'IA ' . $profile,
+            'context' => array_filter([
+                'model' => $this->profiles[$profile]['model'] ?? null,
+                'maxTokens' => $options['max_tokens'] ?? null,
+                'durationSeconds' => round(microtime(true) - $start, 1),
+                'usage' => $usage,
+            ]),
+        ]);
     }
 
     /**

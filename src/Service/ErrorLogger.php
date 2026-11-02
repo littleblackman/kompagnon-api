@@ -7,6 +7,7 @@ use Doctrine\DBAL\Connection;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * Écrit une erreur dans la table error_log.
@@ -18,6 +19,9 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
  */
 class ErrorLogger
 {
+    /** Attribut posé sur la requête une fois son erreur journalisée : une seule entrée par requête */
+    public const REQUEST_LOGGED = '_error_logged';
+
     private const MAX_MESSAGE = 5000;
     private const MAX_TRACE = 60000;
 
@@ -25,6 +29,7 @@ class ErrorLogger
         private Connection $connection,
         private Security $security,
         private LoggerInterface $logger,
+        private RequestStack $requestStack,
         #[Autowire('%kernel.project_dir%')]
         private string $projectDir,
     ) {}
@@ -44,6 +49,13 @@ class ErrorLogger
             $level = in_array($entry['level'], ErrorLog::LEVELS, true) ? $entry['level'] : 'error';
 
             $userEmail = $entry['userEmail'] ?? $this->security->getUser()?->getUserIdentifier();
+
+            // Journalisé depuis un service (l'IA…) : la requête en cours situe l'erreur
+            $request = $this->requestStack->getMainRequest();
+            $entry += array_filter([
+                'method' => $request?->getMethod(),
+                'url' => $request?->getPathInfo(),
+            ]);
 
             // Même source, même type, même message, même endroit = même erreur
             $fingerprint = sha1(implode('|', [
@@ -84,6 +96,11 @@ class ErrorLogger
                     'resolved' => 0,
                     'created_at' => $now,
                 ]);
+            }
+
+            // Un avertissement n'empêche pas de journaliser l'erreur qui suivrait
+            if ($level !== 'warning') {
+                $request?->attributes->set(self::REQUEST_LOGGED, true);
             }
         } catch (\Throwable $e) {
             $this->logger->error('ErrorLogger : impossible de journaliser en base', [

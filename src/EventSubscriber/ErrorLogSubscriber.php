@@ -23,8 +23,6 @@ use Symfony\Component\HttpKernel\KernelEvents;
  */
 class ErrorLogSubscriber implements EventSubscriberInterface
 {
-    private const LOGGED = '_error_logged';
-
     public function __construct(private ErrorLogger $errorLogger) {}
 
     public static function getSubscribedEvents(): array
@@ -52,7 +50,6 @@ class ErrorLogSubscriber implements EventSubscriberInterface
         $level = ($exception instanceof \Error || $exception instanceof DBALException) ? 'critical' : 'error';
 
         $this->errorLogger->logException($exception, $level, $this->requestInfo($request, $status));
-        $request->attributes->set(self::LOGGED, true);
     }
 
     public function onResponse(ResponseEvent $event): void
@@ -61,7 +58,7 @@ class ErrorLogSubscriber implements EventSubscriberInterface
         $response = $event->getResponse();
 
         if (!$event->isMainRequest() || !$this->isApi($request)
-            || $response->getStatusCode() < 500 || $request->attributes->get(self::LOGGED)) {
+            || $response->getStatusCode() < 500 || $request->attributes->get(ErrorLogger::REQUEST_LOGGED)) {
             return;
         }
 
