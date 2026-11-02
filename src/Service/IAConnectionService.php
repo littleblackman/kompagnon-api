@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Entity\ErrorLog;
+use Doctrine\DBAL\Connection;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Component\HttpClient\Exception\TransportException;
 
@@ -41,8 +42,11 @@ class IAConnectionService
     /** @var array<string, array{model: string, reasoning: bool}> */
     private array $profiles;
 
-    public function __construct(HttpClientInterface $httpClient, private ErrorLogger $errorLogger)
-    {
+    public function __construct(
+        HttpClientInterface $httpClient,
+        private ErrorLogger $errorLogger,
+        private Connection $connection
+    ) {
         $this->httpClient = $httpClient;
 
         // Configuration Mistral API
@@ -87,12 +91,31 @@ class IAConnectionService
     {
         $start = microtime(true);
         try {
-            return $this->call($systemPrompt, $userMessage, $options);
+            try {
+                return $this->call($systemPrompt, $userMessage, $options);
+            } finally {
+                // Avant le journal d'erreur, qui écrit lui aussi en base
+                $this->releaseIdleConnection();
+            }
         } catch (\Exception $e) {
             // Les appelants rendent l'échec en 422 : sans cette trace, une
             // panne de l'IA (clé absente, quota, délai) ne laissait rien au journal
             $this->logFailure($e->getMessage(), 'error', $options, $start);
             throw $e;
+        }
+    }
+
+    /**
+     * Un modèle qui raisonne peut répondre après plusieurs minutes : MySQL a
+     * entre-temps fermé la connexion restée inactive (wait_timeout), et le
+     * flush qui suit l'analyse échouait sur « MySQL server has gone away ».
+     * On la referme de notre côté ; Doctrine en rouvre une à la requête
+     * suivante. Jamais au milieu d'une transaction, qui serait perdue.
+     */
+    private function releaseIdleConnection(): void
+    {
+        if (!$this->connection->isTransactionActive()) {
+            $this->connection->close();
         }
     }
 
